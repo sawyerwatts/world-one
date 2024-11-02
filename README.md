@@ -7,10 +7,15 @@ I'm revisiting this project for funsies.
 
 ## Developer Setup
 
-1. Run `source ./env` to prompt and source needed environment variables and
-aliases. This will require supplemental environment variables, like `PSUSER`,
-so developers should set those environemt variables into `.env`, which is
-excluded from source control.
+- `.env` should contain environment variables for secrets and credentials since
+   it is not checked in. Here's the list of variables to `export`:
+
+   - `W1_PGHOST`
+   - `W1_PGUSER`
+   - `W1_PGPASSWORD`
+
+- If you need to run database migrations, `source ./env` will produce a
+`migrate` alias and a `W1_PGURL` environment variable.
 
 ## TODO
 
