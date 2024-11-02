@@ -1,6 +1,8 @@
 # Thanks, Alex!
 # https://www.alexedwards.net/blog/a-time-saving-makefile-for-your-go-projects
 
+SHELL := /bin/bash
+
 .DEFAULT_GOAL = run
 
 main_package_path = ./cmd/world-one
@@ -32,6 +34,10 @@ confirm:
 no-dirty:
 	@test -z "$(shell git status --porcelain)"
 
+.PHONY: source-env
+source-env:
+	source ./env
+
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -39,23 +45,23 @@ no-dirty:
 
 ## test: run all tests
 .PHONY: test
-test:
+test: source-env
 	$(go_build_env) go test -v -race -buildvcs ./...
 
 ## test/force: forcefully run all tests
 .PHONY: test/force
-test/force:
+test/force: source-env
 	$(go_build_env) go test -v -race -buildvcs -count=1 ./...
 
 ## test/cover: run all tests and display coverage
 .PHONY: test/cover
-test/cover:
+test/cover: source-env
 	$(go_build_env) go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
 	$(go_build_env) go tool cover -html=/tmp/coverage.out
 
 ## audit: run quality control checks
 .PHONY: audit
-audit: test tools/sqlc/vet
+audit: source-env test tools/sqlc/vet
 	$(go_build_env) go mod tidy -diff
 	$(go_build_env) go mod verify
 	test -z "$(shell gofmt -l .)"
@@ -71,18 +77,18 @@ audit: test tools/sqlc/vet
 
 ## tidy: tidy modfiles and format .go files
 .PHONY: tidy
-tidy:
+tidy: source-env
 	$(go_build_env) go mod tidy -v
 	$(go_build_env) go fmt ./...
 
 ## run: run the application via `go run`
 .PHONY: run
-run:
+run: source-env
 	$(go_build_env) go run -v -race ${main_package_path}
 
 ## run/live: run the application with reloading on file changes
 .PHONY: run/live
-run/live:
+run/live: source-env
 	$(go_build_env) go run github.com/cosmtrek/air@v1.43.0 \
 		--build.cmd "make build" --build.bin "/tmp/bin/${binary_name}" --build.delay "100" \
 		--build.exclude_dir "" \
@@ -91,28 +97,28 @@ run/live:
 
 ## build: build the application
 .PHONY: build
-build:
+build: source-env
 	# Include additional build steps, like TypeScript, SCSS or Tailwind compilation here...
 	GOOS=linux GOARCH=amd64 go build -o=/tmp/bin/${binary_name} ${main_package_path}
 
 ## build/run: build the application and run the binary
 .PHONY: build/run
-build/run: build
+build/run: source-env build
 	/tmp/bin/${binary_name}
 
 ## build/clean: remove build artifacts
 .PHONY: build/clean
-build/clean:
+build/clean: source-env
 	rm /tmp/bin/${binary_name}
 
 ## tools/sqlc/vet: vet/lint the sqlc queries
 .PHONY: tools/sqlc/vet
-tools/sqlc/vet:
+tools/sqlc/vet: source-env
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest vet
 
 ## tools/sqlc/generate: generate code from sqlc queries
 .PHONY: tools/sqlc/generate
-tools/sqlc/generate:
+tools/sqlc/generate: source-env
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
 
 
@@ -122,12 +128,12 @@ tools/sqlc/generate:
 
 ## push: push changes to the remote Git repository
 .PHONY: push
-push: confirm audit no-dirty
+push: source-env confirm audit no-dirty
 	git push
 
 ## production/deploy: deploy the application to production
 .PHONY: production/deploy
-production/deploy: confirm audit no-dirty
+production/deploy: source-env confirm audit no-dirty source-env
 	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
 	upx -5 /tmp/bin/linux_amd64/${binary_name}
 	# TODO: Include additional deployment steps here...

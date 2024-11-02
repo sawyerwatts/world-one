@@ -8,9 +8,9 @@ fi
 
 if [ -z $W1_PGHOST ]; then
 	echo "Please define environment variable W1_PGHOST"
-elif [ -z $PGUSER ]; then
+elif [ -z $W1_PGUSER ]; then
 	echo "Please define environment variable W1_PGUSER"
-elif [ -z $PGPASSWORD ]; then
+elif [ -z $W1_PGPASSWORD ]; then
 	echo "Please define environment variable W1_PGPASSWORD"
 else
 	export W1_PGURL="postgresql://$W1_PGUSER:$W1_PGPASSWORD@$W1_PGHOST/world_one?sslmode=disable"
