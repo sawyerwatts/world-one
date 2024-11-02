@@ -55,7 +55,7 @@ test/cover:
 
 ## audit: run quality control checks
 .PHONY: audit
-audit: test
+audit: test tools/sqlc/vet
 	$(go_build_env) go mod tidy -diff
 	$(go_build_env) go mod verify
 	test -z "$(shell gofmt -l .)"
@@ -104,6 +104,16 @@ build/run: build
 .PHONY: build/clean
 build/clean:
 	rm /tmp/bin/${binary_name}
+
+## tools/sqlc/vet: vet/lint the sqlc queries
+.PHONY: tools/sqlc/vet
+tools/sqlc/vet:
+	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest vet
+
+## tools/sqlc/generate: generate code from sqlc queries
+.PHONY: tools/sqlc/generate
+tools/sqlc/generate:
+	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
 
 
 # ==================================================================================== #

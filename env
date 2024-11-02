@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ -f ./.env ]; then
+	source ./.env
+else
+	echo "./.env does not exist. Hopefully all the needed environment variables are exported from somewhere else"
+fi
+
+if [ -z $PGHOST ]; then
+	echo "Please define environment variable PGHOST"
+elif [ -z $PGUSER ]; then
+	echo "Please define environment variable PGUSER"
+elif [ -z $PGPASSWORD ]; then
+	echo "Please define environment variable PGPASSWORD"
+else
+	export PGURL="postgresql://$PGUSER:$PGPASSWORD@$PGHOST/world_one?sslmode=disable"
+	alias migrate='go run -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest'
+	# $ migrate create -ext sql -dir migrations -seq create_users_table
+	# $ source ./env.sh; migrate -path sql/migrations/ -database $PGURL up
+	# If you need to force a certain version:
+	# 	$ migrate -path migrations/ -database $PGURL force 1
+fi
+
