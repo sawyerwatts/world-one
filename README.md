@@ -7,13 +7,9 @@ I'm revisiting this project for funsies.
 
 ## Developer Setup
 
-- `.env` should contain environment variables for secrets and credentials since
-   it is not checked in. Here's the list of variables to `export`:
-
-   - `W1_PGHOST`
-   - `W1_PGUSER`
-   - `W1_PGPASSWORD`
-
+- `make stub-.env` will auto-generated a stubbed `.env` file. This file is in
+the `.gitignore` and is to contain credentials, secrets, etc. As such, run that
+recipe and initilize the variables.
 - If you need to run database migrations, `source ./env` will produce a
 `migrate` alias and a `W1_PGURL` environment variable.
 

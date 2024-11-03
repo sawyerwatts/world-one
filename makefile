@@ -121,6 +121,16 @@ tools/sqlc/vet: source-env
 tools/sqlc/generate: source-env
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
 
+## stub-.env: create a stubbed .env file
+.PHONY: stub-.env
+stub-.env:
+	@echo -e "#!/bin/bash \n\
+	# This script contains credentials and secrets, so it is present in the .gitignore \n\
+	export W1_PGHOST=TODO:this \n\
+	export W1_PGUSER=TODO:this \n\
+	export W1_PGPASSWORD=TODO:this" > .env
+	@echo ".env has been stubbed, now go initialize the values"
+
 
 # ==================================================================================== #
 # OPERATIONS
