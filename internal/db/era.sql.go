@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 const getCurrEra = `-- name: GetCurrEra :one
@@ -15,6 +16,11 @@ from eras
 where end_time = '2200/1/1'
 `
 
+// GetCurrEra
+//
+//	select id, name, start_time, end_time, create_time, update_time
+//	from eras
+//	where end_time = '2200/1/1'
 func (q *Queries) GetCurrEra(ctx context.Context) (Era, error) {
 	row := q.db.QueryRow(ctx, getCurrEra)
 	var i Era
@@ -34,6 +40,10 @@ select id, name, start_time, end_time, create_time, update_time
 from eras
 `
 
+// GetEras
+//
+//	select id, name, start_time, end_time, create_time, update_time
+//	from eras
 func (q *Queries) GetEras(ctx context.Context) ([]Era, error) {
 	rows, err := q.db.Query(ctx, getEras)
 	if err != nil {
@@ -59,4 +69,84 @@ func (q *Queries) GetEras(ctx context.Context) ([]Era, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertEra = `-- name: InsertEra :one
+insert into eras (name, start_time, end_time)
+values           ($1,   $2,         $3)
+returning id, name, start_time, end_time, create_time, update_time
+`
+
+type InsertEraParams struct {
+	Name      string
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+// InsertEra
+//
+//	insert into eras (name, start_time, end_time)
+//	values           ($1,   $2,         $3)
+//	returning id, name, start_time, end_time, create_time, update_time
+func (q *Queries) InsertEra(ctx context.Context, arg InsertEraParams) (Era, error) {
+	row := q.db.QueryRow(ctx, insertEra, arg.Name, arg.StartTime, arg.EndTime)
+	var i Era
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.StartTime,
+		&i.EndTime,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return i, err
+}
+
+const updateEra = `-- name: UpdateEra :one
+update eras
+set
+		name = $2,
+		start_time = $3,
+		end_time = $4
+where id = $1
+		and update_time = $5
+returning id, name, start_time, end_time, create_time, update_time
+`
+
+type UpdateEraParams struct {
+	ID         int64
+	Name       string
+	StartTime  time.Time
+	EndTime    time.Time
+	UpdateTime time.Time
+}
+
+// UpdateEra
+//
+//	update eras
+//	set
+//			name = $2,
+//			start_time = $3,
+//			end_time = $4
+//	where id = $1
+//			and update_time = $5
+//	returning id, name, start_time, end_time, create_time, update_time
+func (q *Queries) UpdateEra(ctx context.Context, arg UpdateEraParams) (Era, error) {
+	row := q.db.QueryRow(ctx, updateEra,
+		arg.ID,
+		arg.Name,
+		arg.StartTime,
+		arg.EndTime,
+		arg.UpdateTime,
+	)
+	var i Era
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.StartTime,
+		&i.EndTime,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return i, err
 }
