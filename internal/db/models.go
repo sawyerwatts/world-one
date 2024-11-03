@@ -9,10 +9,10 @@ import (
 )
 
 type Era struct {
-	ID          int64
-	Name        string
-	StartTime   time.Time
-	EndTime     time.Time
-	CreatedTime time.Time
-	UpdatedTime time.Time
+	ID         int64
+	Name       string
+	StartTime  time.Time
+	EndTime    time.Time
+	CreateTime time.Time
+	UpdateTime time.Time
 }

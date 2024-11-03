@@ -10,7 +10,7 @@ import (
 )
 
 const getCurrEra = `-- name: GetCurrEra :one
-select id, name, start_time, end_time, created_time, updated_time
+select id, name, start_time, end_time, create_time, update_time
 from eras
 where end_time = '2200/1/1'
 `
@@ -23,14 +23,14 @@ func (q *Queries) GetCurrEra(ctx context.Context) (Era, error) {
 		&i.Name,
 		&i.StartTime,
 		&i.EndTime,
-		&i.CreatedTime,
-		&i.UpdatedTime,
+		&i.CreateTime,
+		&i.UpdateTime,
 	)
 	return i, err
 }
 
 const getEras = `-- name: GetEras :many
-select id, name, start_time, end_time, created_time, updated_time
+select id, name, start_time, end_time, create_time, update_time
 from eras
 `
 
@@ -48,8 +48,8 @@ func (q *Queries) GetEras(ctx context.Context) ([]Era, error) {
 			&i.Name,
 			&i.StartTime,
 			&i.EndTime,
-			&i.CreatedTime,
-			&i.UpdatedTime,
+			&i.CreateTime,
+			&i.UpdateTime,
 		); err != nil {
 			return nil, err
 		}
