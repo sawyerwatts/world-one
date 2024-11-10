@@ -15,6 +15,10 @@ recipe and initilize the variables.
 
 ## TODO
 
+- architecture diagram
+- erd
+- breakout features
+
 ### GitHub
 
 - Create ci/cd pipeline and have it pad PRs
@@ -22,6 +26,7 @@ recipe and initilize the variables.
 ### Application
 
 - Eras
+   - DB stuff is done, now need to make svcs and ctlr
 - Factions
 - Players + Characters
     - B2C auth

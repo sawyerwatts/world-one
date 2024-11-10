@@ -10,6 +10,23 @@ import (
 	"time"
 )
 
+const deleteEra = `-- name: DeleteEra :execrows
+delete from eras
+where id = $1
+`
+
+// DeleteEra
+//
+//	delete from eras
+//	where id = $1
+func (q *Queries) DeleteEra(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteEra, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getCurrEra = `-- name: GetCurrEra :one
 select id, name, start_time, end_time, create_time, update_time
 from eras
@@ -100,6 +117,21 @@ func (q *Queries) InsertEra(ctx context.Context, arg InsertEraParams) (Era, erro
 		&i.UpdateTime,
 	)
 	return i, err
+}
+
+const truncateEra = `-- name: TruncateEra :execrows
+delete from eras
+`
+
+// TruncateEra
+//
+//	delete from eras
+func (q *Queries) TruncateEra(ctx context.Context) (int64, error) {
+	result, err := q.db.Exec(ctx, truncateEra)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const updateEra = `-- name: UpdateEra :one

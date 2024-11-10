@@ -22,5 +22,10 @@ where id = $1
 		and update_time = $5
 returning *;
 
--- It is intentional to have no query to delete an era.
+-- name: DeleteEra :execrows
+delete from eras
+where id = $1;
+
+-- name: TruncateEra :execrows
+delete from eras;
 
