@@ -41,14 +41,14 @@ func (rollover Rollover) Exec(
 ) (newEra db.Era, updatedEra *db.Era, _ error) {
 	currEra, err := rollover.queries.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
-		return db.Era{}, nil, fmt.Errorf("Short circuiting era rollover, context has error: %w", err)
+		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
 	hasCurrEra := true
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			hasCurrEra = false
 		} else {
-			return db.Era{}, nil, fmt.Errorf("Era rollover failed while retrieving the current era: %w", err)
+			return db.Era{}, nil, fmt.Errorf("era rollover failed while retrieving the current era: %w", err)
 		}
 	}
 
@@ -62,10 +62,10 @@ func (rollover Rollover) Exec(
 			UpdateTime: currEra.UpdateTime,
 		})
 		if err := ctx.Err(); err != nil {
-			return db.Era{}, nil, fmt.Errorf("Short circuiting era rollover, context has error: %w", err)
+			return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 		}
 		if err != nil {
-			return db.Era{}, nil, fmt.Errorf("Era rollover failed while updating the current era: %w", err)
+			return db.Era{}, nil, fmt.Errorf("era rollover failed while updating the current era: %w", err)
 		}
 		updatedEra = &updatedCurrEra
 	}
@@ -76,11 +76,11 @@ func (rollover Rollover) Exec(
 		EndTime:   common.UninitializedEndDate,
 	})
 	if err := ctx.Err(); err != nil {
-		return db.Era{}, nil, fmt.Errorf("Short circuiting era rollover, context has error: %w", err)
+		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
 	if err != nil {
 		// TODO: check if err is b/c of bad data (like dup name)
-		return db.Era{}, nil, fmt.Errorf("Era rollover failed while inserting the new era: %w", err)
+		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
 	}
 
 	return newEra, updatedEra, nil

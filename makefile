@@ -138,7 +138,7 @@ stub-.env:
 
 ## push: push changes to the remote Git repository
 .PHONY: push
-push: source-env confirm audit no-dirty
+push: confirm source-env audit no-dirty
 	git push
 
 ## production/deploy: deploy the application to production
