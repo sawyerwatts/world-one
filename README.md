@@ -5,6 +5,8 @@ discussed and briefly attempted a couple years ago. My friend plays `sf0`, which
 is essentially an ARG (not the virtual reality kind) mixed with a social media.
 I'm revisiting this project for funsies.
 
+Check out the wiki!
+
 ## Developer Setup
 
 - `make stub-.env` will auto-generated a stubbed `.env` file. This file is in
@@ -23,10 +25,22 @@ recipe and initilize the variables.
 
 - Create ci/cd pipeline and have it pad PRs
 
+### Azure
+
+- Identity
+- Compute
+- DB
+
 ### Application
 
+- Setup cmd
+   - Settings
+   - Gin
+   - perf endpoints
 - Eras
-   - DB stuff is done, now need to make svcs and ctlr
+   - create/migrate era
+   - update era
+   - Integration tests for sql?
 - Factions
 - Players + Characters
     - B2C auth
