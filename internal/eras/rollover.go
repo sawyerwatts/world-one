@@ -11,10 +11,15 @@ import (
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// TODO: test this to verify it all works
-// TODO: see TODO at bottom of Exec
 // TODO: setup+inject logger
 // TODO: add resilience
+// TODO: setup Gin and make endpoint for this svc and start openapi spec
+//	give openapi spec its own endpoint
+// TEST: test this to verify it all works
+//	test containers!
+//	integration test svc? or integration test db.Queries and then unit test svc?
+//		or integration test both?
+// BUG: see BUG at bottom of Exec
 
 // Rollover is used to terminate the previous Era (if one exists) while creating
 // the next Era. While this Rollover occurs, other parts of the game will likely
@@ -79,7 +84,8 @@ func (rollover Rollover) Exec(
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
 	if err != nil {
-		// TODO: check if err is b/c of bad data (like dup name)
+		// BUG: check if err is b/c of bad data (like dup name)
+		//	what to return such that 400s are obv?
 		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
 	}
 

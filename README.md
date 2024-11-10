@@ -17,9 +17,7 @@ recipe and initilize the variables.
 
 ## TODO
 
-- architecture diagram
-- erd
-- breakout features
+- Breakout features
 
 ### GitHub
 
@@ -28,21 +26,24 @@ recipe and initilize the variables.
 ### Azure
 
 - Identity
+   - Add to the following built endpoints:
+      - N/A
 - Compute
 - DB
 
 ### Application
 
 - Setup cmd
-   - Settings
+   - ctl-c
    - Gin
-   - perf endpoints
+   - Settings
+   - perf endpoints; lock down hard!
 - Eras
-   - create/migrate era
+   - WIP: create/migrate era
    - update era
-   - Integration tests for sql?
+   - Get curr era w/ cache
 - Factions
 - Players + Characters
-    - B2C auth
+    - Start ERD now that there's related tables
 - Etc
 
