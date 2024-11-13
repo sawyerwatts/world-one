@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/sawyerwatts/world-one/internal/common"
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// TODO: setup+inject logger
 // TODO: add resilience
 // TODO: setup Gin and make endpoint for this svc and start openapi spec
 //	give openapi spec its own endpoint
@@ -27,10 +27,17 @@ import (
 // the actual start time of the new Era.
 type Rollover struct {
 	queries rolloverQueries
+	slogger slog.Logger
 }
 
-func MakeRollover(queries rolloverQueries) Rollover {
-	return Rollover{queries: queries}
+func MakeRollover(
+	queries rolloverQueries,
+	slogger slog.Logger,
+) Rollover {
+	return Rollover{
+		queries: queries,
+		slogger: slogger,
+	}
 }
 
 type rolloverQueries interface {
@@ -39,12 +46,13 @@ type rolloverQueries interface {
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
 
-func (rollover Rollover) Exec(
+func (r Rollover) Exec(
 	ctx context.Context,
 	now time.Time,
 	newEraName string,
 ) (newEra db.Era, updatedEra *db.Era, _ error) {
-	currEra, err := rollover.queries.GetCurrEra(ctx)
+	r.slogger.Info("Attempting to retrieving current era, if exists")
+	currEra, err := r.queries.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
@@ -58,8 +66,9 @@ func (rollover Rollover) Exec(
 	}
 
 	if hasCurrEra {
+		r.slogger.Info("There is a current era, terminating and updating database")
 		currEra.EndTime = now
-		updatedCurrEra, err := rollover.queries.UpdateEra(ctx, db.UpdateEraParams{
+		updatedCurrEra, err := r.queries.UpdateEra(ctx, db.UpdateEraParams{
 			ID:         currEra.ID,
 			Name:       currEra.Name,
 			StartTime:  currEra.StartTime,
@@ -73,9 +82,11 @@ func (rollover Rollover) Exec(
 			return db.Era{}, nil, fmt.Errorf("era rollover failed while updating the current era: %w", err)
 		}
 		updatedEra = &updatedCurrEra
+		r.slogger.Info("Current era was saved")
 	}
 
-	newEra, err = rollover.queries.InsertEra(ctx, db.InsertEraParams{
+	r.slogger.Info("Inserting new era")
+	newEra, err = r.queries.InsertEra(ctx, db.InsertEraParams{
 		Name:      newEraName,
 		StartTime: now,
 		EndTime:   common.UninitializedEndDate,
@@ -89,5 +100,6 @@ func (rollover Rollover) Exec(
 		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
 	}
 
+	r.slogger.Info("New era was saved")
 	return newEra, updatedEra, nil
 }
