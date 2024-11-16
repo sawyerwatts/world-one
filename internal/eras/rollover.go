@@ -2,10 +2,10 @@ package eras
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/sawyerwatts/world-one/internal/common"
@@ -18,28 +18,31 @@ import (
 //	integration test svc? or integration test db.Queries and then unit test svc?
 //		or integration test both?
 // BUG: see BUG at bottom of Exec
+// TODO: after this and other inlined TODOs, take a pass at the checklists
 
 // Rollover is used to terminate the previous Era (if one exists) while creating
 // the next Era. While this Rollover occurs, other parts of the game will likely
 // be soft reset as well; because of this, the Eras cannot be rolled over before
 // the actual start time of the new Era.
 type Rollover struct {
-	queries rolloverQueries
-	slogger slog.Logger
+	getter    Getter
+	dbQueries rolloverDBQueries
+	slogger   slog.Logger
 }
 
 func MakeRollover(
-	queries rolloverQueries,
+	getter Getter,
+	queries rolloverDBQueries,
 	slogger slog.Logger,
 ) Rollover {
 	return Rollover{
-		queries: queries,
-		slogger: slogger,
+		getter:    getter,
+		dbQueries: queries,
+		slogger:   slogger,
 	}
 }
 
-type rolloverQueries interface {
-	GetCurrEra(ctx context.Context) (db.Era, error)
+type rolloverDBQueries interface {
 	InsertEra(ctx context.Context, arg db.InsertEraParams) (db.Era, error)
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
@@ -49,14 +52,22 @@ func (r Rollover) Exec(
 	now time.Time,
 	newEraName string,
 ) (newEra db.Era, updatedEra *db.Era, _ error) {
+	r.slogger.Info("Beginning the process of rolling over eras")
+	newEraName = strings.Trim(newEraName, " \r\n\t")
+	if len(newEraName) == 0 {
+		return db.Era{}, nil, fmt.Errorf("The new era's name is empty or whitespace")
+		// TODO: return sentinal err? return http status/msg? make sentinal err
+		// for 400 vs 500?
+	}
+
 	r.slogger.Info("Attempting to retrieving current era, if exists")
-	currEra, err := r.queries.GetCurrEra(ctx)
+	currEra, err := r.getter.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
 	hasCurrEra := true
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, ErrNoCurrEra) {
 			hasCurrEra = false
 		} else {
 			return db.Era{}, nil, fmt.Errorf("era rollover failed while retrieving the current era: %w", err)
@@ -66,7 +77,7 @@ func (r Rollover) Exec(
 	if hasCurrEra {
 		r.slogger.Info("There is a current era, terminating and updating database")
 		currEra.EndTime = now
-		updatedCurrEra, err := r.queries.UpdateEra(ctx, db.UpdateEraParams{
+		updatedCurrEra, err := r.dbQueries.UpdateEra(ctx, db.UpdateEraParams{
 			ID:         currEra.ID,
 			Name:       currEra.Name,
 			StartTime:  currEra.StartTime,
@@ -84,7 +95,7 @@ func (r Rollover) Exec(
 	}
 
 	r.slogger.Info("Inserting new era")
-	newEra, err = r.queries.InsertEra(ctx, db.InsertEraParams{
+	newEra, err = r.dbQueries.InsertEra(ctx, db.InsertEraParams{
 		Name:      newEraName,
 		StartTime: now,
 		EndTime:   common.UninitializedEndDate,
@@ -99,5 +110,6 @@ func (r Rollover) Exec(
 	}
 
 	r.slogger.Info("New era was saved")
+	r.slogger.Info("Completing the process of rolling over eras")
 	return newEra, updatedEra, nil
 }

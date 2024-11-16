@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,6 +12,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/sawyerwatts/world-one/internal/db"
+	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
 func main() {
@@ -28,10 +32,56 @@ func main() {
 	// TODO: improve req logging
 
 	// TODO: remove this placeholder w/ actual endpoints
+	//	Don't just hardcode the endpoints+handlers in main
 	//	Start openapi spec, and have an endpoint for that too
-	router.GET("/helloWorld", func(c *gin.Context) {
-		c.String(http.StatusOK, "Hello, world!")
-	})
+	v1 := router.Group("/v1")
+	{
+		erasGroup := v1.Group("/eras")
+		erasGroup.GET("", func(c *gin.Context) {
+			dbConn, err := pgx.Connect(ctx, mainSettings.DBConnectionString)
+			if err != nil {
+				c.String(http.StatusInternalServerError, fmt.Sprintf("Could not connect to DB: %v", err))
+			}
+			defer dbConn.Close(ctx)
+
+			dbQueries := db.New(dbConn)
+			erasGetter := eras.MakeGetter(dbQueries, slogger)
+			allEras, err := erasGetter.GetEras(c)
+			if err != nil {
+				c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
+			}
+
+			eraDTOs := make([]eras.EraDTO, 0, len(allEras))
+			for _, era := range allEras {
+				eraDTO := eras.MakeEraDTO(era)
+				eraDTOs = append(eraDTOs, eraDTO)
+			}
+
+			c.JSON(http.StatusOK, eraDTOs)
+		})
+
+		erasGroup.GET("/current", func(c *gin.Context) {
+			dbConn, err := pgx.Connect(ctx, mainSettings.DBConnectionString)
+			if err != nil {
+				c.String(http.StatusInternalServerError, fmt.Sprintf("Could not connect to DB: %v", err))
+			}
+			defer dbConn.Close(ctx)
+
+			dbQueries := db.New(dbConn)
+			erasGetter := eras.MakeGetter(dbQueries, slogger)
+			era, err := erasGetter.GetCurrEra(ctx)
+			if err != nil {
+				if errors.Is(err, eras.ErrNoCurrEra) {
+					c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")
+					return
+				}
+				c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
+				return
+			}
+
+			c.JSON(http.StatusOK, eras.MakeEraDTO(era))
+		})
+	}
 
 	s := http.Server{
 		Addr:           mainSettings.Addr,
@@ -50,11 +100,11 @@ func main() {
 			slogger.InfoContext(ctx, "Shutting down server")
 		} else {
 			slog.Error("An bad error was returned by shut down server", slog.String("err", err.Error()))
-			exitCode += 1
+			exitCode = 1
 		}
 	}()
 
-	slogger.InfoContext(ctx, "Send INT or TERM signals to start gracefully shutting down the server")
+	slogger.InfoContext(ctx, "Send interrupt or terminate signals to start gracefully shutting down the server")
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
@@ -63,7 +113,7 @@ func main() {
 	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {
 		slogger.ErrorContext(ctx, "Server errored while shutting down", slog.String("err", err.Error()))
-		exitCode += 10
+		exitCode = 1
 	}
 
 	os.Exit(exitCode)
@@ -76,6 +126,7 @@ type mainSettings struct {
 	IdleTimeoutSec         int
 	MaxGracefulShutdownSec int
 	SlogIncludeSource      bool
+	DBConnectionString     string
 }
 
 func makeMainSettings() mainSettings {
@@ -86,5 +137,6 @@ func makeMainSettings() mainSettings {
 		IdleTimeoutSec:         120,
 		MaxGracefulShutdownSec: 5,
 		SlogIncludeSource:      false,
+		DBConnectionString:     "dbname=world_one",
 	}
 }
