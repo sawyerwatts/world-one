@@ -10,7 +10,7 @@ import (
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-var ErrNoCurrEra = errors.New("There is no current era, the game is misconfigured")
+var ErrNoCurrEra = errors.New("there is no current era, the game is misconfigured")
 
 // TODO: add caching of curr era
 //	curr era cache svc? repo??
