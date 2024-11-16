@@ -34,6 +34,8 @@ func main() {
 	// TODO: remove this placeholder w/ actual endpoints
 	//	Don't just hardcode the endpoints+handlers in main
 	//	Start openapi spec, and have an endpoint for that too
+	//	Also include example http file
+	// TODO: healthcheck
 	v1 := router.Group("/v1")
 	{
 		erasGroup := v1.Group("/eras")
@@ -45,8 +47,8 @@ func main() {
 			defer dbConn.Close(ctx)
 
 			dbQueries := db.New(dbConn)
-			erasGetter := eras.MakeGetter(dbQueries, slogger)
-			allEras, err := erasGetter.GetEras(c)
+			eraRepo := eras.MakeEraRepo(dbQueries, slogger)
+			allEras, err := eraRepo.GetEras(c)
 			if err != nil {
 				c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
 			}
@@ -68,8 +70,8 @@ func main() {
 			defer dbConn.Close(ctx)
 
 			dbQueries := db.New(dbConn)
-			erasGetter := eras.MakeGetter(dbQueries, slogger)
-			era, err := erasGetter.GetCurrEra(ctx)
+			eraRepo := eras.MakeEraRepo(dbQueries, slogger)
+			era, err := eraRepo.GetCurrEra(ctx)
 			if err != nil {
 				if errors.Is(err, eras.ErrNoCurrEra) {
 					c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")
@@ -92,7 +94,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	slogger.InfoContext(ctx, "Starting HTTP server")
+	slogger.InfoContext(ctx, "Starting HTTP server", slog.String("addr", mainSettings.Addr))
 	exitCode := 0
 	go func() {
 		err := s.ListenAndServe()

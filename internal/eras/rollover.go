@@ -25,24 +25,22 @@ import (
 // be soft reset as well; because of this, the Eras cannot be rolled over before
 // the actual start time of the new Era.
 type Rollover struct {
-	getter    Getter
-	dbQueries rolloverDBQueries
-	slogger   slog.Logger
+	eraRepo rolloverEraRepo
+	slogger slog.Logger
 }
 
 func MakeRollover(
-	getter Getter,
-	queries rolloverDBQueries,
+	eraRepo rolloverEraRepo,
 	slogger slog.Logger,
 ) Rollover {
 	return Rollover{
-		getter:    getter,
-		dbQueries: queries,
-		slogger:   slogger,
+		eraRepo: eraRepo,
+		slogger: slogger,
 	}
 }
 
-type rolloverDBQueries interface {
+type rolloverEraRepo interface {
+	GetCurrEra(ctx context.Context) (db.Era, error)
 	InsertEra(ctx context.Context, arg db.InsertEraParams) (db.Era, error)
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
@@ -61,7 +59,7 @@ func (r Rollover) Exec(
 	}
 
 	r.slogger.Info("Attempting to retrieving current era, if exists")
-	currEra, err := r.getter.GetCurrEra(ctx)
+	currEra, err := r.eraRepo.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
@@ -77,7 +75,7 @@ func (r Rollover) Exec(
 	if hasCurrEra {
 		r.slogger.Info("There is a current era, terminating and updating database")
 		currEra.EndTime = now
-		updatedCurrEra, err := r.dbQueries.UpdateEra(ctx, db.UpdateEraParams{
+		updatedCurrEra, err := r.eraRepo.UpdateEra(ctx, db.UpdateEraParams{
 			ID:         currEra.ID,
 			Name:       currEra.Name,
 			StartTime:  currEra.StartTime,
@@ -95,7 +93,7 @@ func (r Rollover) Exec(
 	}
 
 	r.slogger.Info("Inserting new era")
-	newEra, err = r.dbQueries.InsertEra(ctx, db.InsertEraParams{
+	newEra, err = r.eraRepo.InsertEra(ctx, db.InsertEraParams{
 		Name:      newEraName,
 		StartTime: now,
 		EndTime:   common.UninitializedEndDate,
