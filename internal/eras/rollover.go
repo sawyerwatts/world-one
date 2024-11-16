@@ -55,7 +55,7 @@ func (r Rollover) Exec(
 	r.slogger.Info("Beginning the process of rolling over eras")
 	newEraName = strings.Trim(newEraName, " \r\n\t")
 	if len(newEraName) == 0 {
-		return db.Era{}, nil, fmt.Errorf("The new era's name is empty or whitespace")
+		return db.Era{}, nil, fmt.Errorf("the new era's name is empty or whitespace")
 		// TODO: return sentinal err? return http status/msg? make sentinal err
 		// for 400 vs 500?
 	}
