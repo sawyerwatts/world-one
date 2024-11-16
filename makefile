@@ -1,4 +1,4 @@
-# Thanks, Alex!
+# Kudos to Alex for the original version:
 # https://www.alexedwards.net/blog/a-time-saving-makefile-for-your-go-projects
 
 SHELL := /bin/bash
@@ -7,6 +7,7 @@ SHELL := /bin/bash
 
 main_package_path = ./cmd/world-one
 binary_name = world-one
+go_env = GOOS=linux GOARCH=amd64
 
 # NOTE: Don't forget about build tags, like `-tags integration`!
 
@@ -46,29 +47,29 @@ source-env:
 ## test: run all tests
 .PHONY: test
 test: source-env
-	$(go_build_env) go test -v -race -buildvcs ./...
+	$(go_env) go test -v -race -buildvcs ./...
 
 ## test/force: forcefully run all tests
 .PHONY: test/force
 test/force: source-env
-	$(go_build_env) go test -v -race -buildvcs -count=1 ./...
+	$(go_env) go test -v -race -buildvcs -count=1 ./...
 
 ## test/cover: run all tests and display coverage
 .PHONY: test/cover
 test/cover: source-env
-	$(go_build_env) go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
-	$(go_build_env) go tool cover -html=/tmp/coverage.out
+	$(go_env) go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
+	$(go_env) go tool cover -html=/tmp/coverage.out
 
 ## audit: run quality control checks
 .PHONY: audit
 audit: source-env test tools/sqlc/vet
-	$(go_build_env) go mod tidy -diff
-	$(go_build_env) go mod verify
+	$(go_env) go mod tidy -diff
+	$(go_env) go mod verify
 	test -z "$(shell gofmt -l .)"
-	$(go_build_env) go vet ./...
+	$(go_env) go vet ./...
 	# WARN: You may decide to freeze these versions within a project
-	$(go_build_env) go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...
-	$(go_build_env) go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	$(go_env) go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...
+	$(go_env) go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
 
 # ==================================================================================== #
@@ -78,33 +79,32 @@ audit: source-env test tools/sqlc/vet
 ## tidy: tidy modfiles and format .go files
 .PHONY: tidy
 tidy: source-env
-	$(go_build_env) go mod tidy -v
-	$(go_build_env) go fmt ./...
+	$(go_env) go mod tidy -v
+	$(go_env) go fmt ./...
 
-## run: run the application via `go run`
+## run: build the application as debug and run the binary
 .PHONY: run
-run: source-env
-	$(go_build_env) go run -v -race ${main_package_path}
+run: source-env build/debug
+	/tmp/bin/${binary_name}
 
 ## run/live: run the application with reloading on file changes
 .PHONY: run/live
-run/live: source-env
-	$(go_build_env) go run github.com/cosmtrek/air@v1.43.0 \
+run/live: source-env build/debug
+	$(go_env) go run github.com/cosmtrek/air@v1.43.0 \
 		--build.cmd "make build" --build.bin "/tmp/bin/${binary_name}" --build.delay "100" \
 		--build.exclude_dir "" \
 		--build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" \
 		--misc.clean_on_exit "true"
 
-## build: build the application
+## build: build the application without -race, -v, etc
 .PHONY: build
 build: source-env
-	# Include additional build steps, like TypeScript, SCSS or Tailwind compilation here...
-	GOOS=linux GOARCH=amd64 go build -o=/tmp/bin/${binary_name} ${main_package_path}
+	$(go_env) go build -o=/tmp/bin/${binary_name} ${main_package_path}
 
-## build/run: build the application and run the binary
-.PHONY: build/run
-build/run: source-env build
-	/tmp/bin/${binary_name}
+## build/race: build the application with -race, -v, etc
+.PHONY: build/debug
+build/debug: source-env
+	$(go_env) go build -v -race -o=/tmp/bin/${binary_name} ${main_package_path}
 
 ## build/clean: remove build artifacts
 .PHONY: build/clean
@@ -144,7 +144,7 @@ push: confirm source-env audit no-dirty
 ## production/deploy: deploy the application to production
 .PHONY: production/deploy
 production/deploy: source-env confirm audit no-dirty source-env
-	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
+	$(go_env) go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
 	upx -5 /tmp/bin/linux_amd64/${binary_name}
 	# TODO: Include additional deployment steps here...
 
