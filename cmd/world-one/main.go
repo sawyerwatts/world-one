@@ -28,6 +28,7 @@ func main() {
 	// TODO: improve req logging
 
 	// TODO: remove this placeholder w/ actual endpoints
+	//	Start openapi spec, and have an endpoint for that too
 	router.GET("/helloWorld", func(c *gin.Context) {
 		c.String(http.StatusOK, "Hello, world!")
 	})

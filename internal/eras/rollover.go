@@ -13,8 +13,6 @@ import (
 )
 
 // TODO: add resilience
-// TODO: setup Gin and make endpoint for this svc and start openapi spec
-//	give openapi spec its own endpoint
 // TEST: test this to verify it all works
 //	test containers!
 //	integration test svc? or integration test db.Queries and then unit test svc?
