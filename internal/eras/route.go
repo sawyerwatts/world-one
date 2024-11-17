@@ -24,7 +24,7 @@ func Route(
 		dbConn, err := pgx.Connect(c, dbConnString)
 		if err != nil {
 			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
-			c.String(http.StatusInternalServerError, fmt.Sprintf("Could not connect to DB"))
+			c.String(http.StatusInternalServerError, "Could not connect to DB")
 		}
 		defer dbConn.Close(c)
 
@@ -32,7 +32,8 @@ func Route(
 		eraQueries := MakeQueries(dbQueries, slogger)
 		allEras, err := eraQueries.GetEras(c)
 		if err != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
+			slogger.Error("An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
+			c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration"))
 		}
 
 		eraDTOs := make([]EraDTO, 0, len(allEras))
@@ -47,7 +48,8 @@ func Route(
 	group.GET("/current", func(c *gin.Context) {
 		dbConn, err := pgx.Connect(c, dbConnString)
 		if err != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("Could not connect to DB: %v", err))
+			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
+			c.String(http.StatusInternalServerError, "Could not connect to DB")
 		}
 		defer dbConn.Close(c)
 
@@ -59,7 +61,8 @@ func Route(
 				c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")
 				return
 			}
-			c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
+			slogger.Error("An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
+			c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration"))
 			return
 		}
 
