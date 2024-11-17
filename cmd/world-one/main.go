@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,13 +11,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
-	"github.com/sawyerwatts/world-one/internal/db"
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
 func main() {
-	// TODO: read settings via viper
+	// TODO: read settings via viper; use embed?
 	//	then update SlogIncludeSource to default to true
 	mainSettings := makeMainSettings()
 
@@ -31,59 +28,12 @@ func main() {
 	// TODO: configure Gin to use slogger
 	// TODO: improve req logging
 
-	// TODO: remove this placeholder w/ actual endpoints
-	//	Don't just hardcode the endpoints+handlers in main
+	// TODO: api stuffs
 	//	Start openapi spec, and have an endpoint for that too
 	//	Also include example http file
-	// TODO: healthcheck
+	//	Healthchecks (connect to DB; ensure curr era exists)
 	v1 := router.Group("/v1")
-	{
-		erasGroup := v1.Group("/eras")
-		erasGroup.GET("", func(c *gin.Context) {
-			dbConn, err := pgx.Connect(ctx, mainSettings.DBConnectionString)
-			if err != nil {
-				c.String(http.StatusInternalServerError, fmt.Sprintf("Could not connect to DB: %v", err))
-			}
-			defer dbConn.Close(ctx)
-
-			dbQueries := db.New(dbConn)
-			eraQueries := eras.MakeQueries(dbQueries, slogger)
-			allEras, err := eraQueries.GetEras(c)
-			if err != nil {
-				c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
-			}
-
-			eraDTOs := make([]eras.EraDTO, 0, len(allEras))
-			for _, era := range allEras {
-				eraDTO := eras.MakeEraDTO(era)
-				eraDTOs = append(eraDTOs, eraDTO)
-			}
-
-			c.JSON(http.StatusOK, eraDTOs)
-		})
-
-		erasGroup.GET("/current", func(c *gin.Context) {
-			dbConn, err := pgx.Connect(ctx, mainSettings.DBConnectionString)
-			if err != nil {
-				c.String(http.StatusInternalServerError, fmt.Sprintf("Could not connect to DB: %v", err))
-			}
-			defer dbConn.Close(ctx)
-
-			dbQueries := db.New(dbConn)
-			eraQueries := eras.MakeQueries(dbQueries, slogger)
-			era, err := eraQueries.GetCurrEra(ctx)
-			if err != nil {
-				if errors.Is(err, eras.ErrNoCurrEra) {
-					c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")
-					return
-				}
-				c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
-				return
-			}
-
-			c.JSON(http.StatusOK, eras.MakeEraDTO(era))
-		})
-	}
+	eras.Route(v1, mainSettings.DBConnectionString, slogger)
 
 	s := http.Server{
 		Addr:           mainSettings.Addr,
