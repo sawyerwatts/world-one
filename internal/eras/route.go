@@ -2,7 +2,6 @@ package eras
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 
