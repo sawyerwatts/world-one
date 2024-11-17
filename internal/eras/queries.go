@@ -34,6 +34,7 @@ type queriesDBQueries interface {
 
 func (q Queries) GetCurrEra(ctx context.Context) (db.Era, error) {
 	q.slogger.Info("Retrieving current era")
+	// BUG: this doesn't work since sql is date but db shows local time??
 	currEra, err := q.dbQueries.GetCurrEra(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
