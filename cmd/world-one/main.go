@@ -47,8 +47,8 @@ func main() {
 			defer dbConn.Close(ctx)
 
 			dbQueries := db.New(dbConn)
-			eraRepo := eras.MakeEraRepo(dbQueries, slogger)
-			allEras, err := eraRepo.GetEras(c)
+			eraQueries := eras.MakeQueries(dbQueries, slogger)
+			allEras, err := eraQueries.GetEras(c)
 			if err != nil {
 				c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration: %v", err))
 			}
@@ -70,8 +70,8 @@ func main() {
 			defer dbConn.Close(ctx)
 
 			dbQueries := db.New(dbConn)
-			eraRepo := eras.MakeEraRepo(dbQueries, slogger)
-			era, err := eraRepo.GetCurrEra(ctx)
+			eraQueries := eras.MakeQueries(dbQueries, slogger)
+			era, err := eraQueries.GetCurrEra(ctx)
 			if err != nil {
 				if errors.Is(err, eras.ErrNoCurrEra) {
 					c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")

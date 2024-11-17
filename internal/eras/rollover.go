@@ -5,20 +5,27 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
+	"unicode"
 
 	"github.com/sawyerwatts/world-one/internal/common"
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// TODO: add resilience
+// BUG: check if err is b/c of bad data (like dup name)
+// BUG: when updating w/ stale update_time, what err does pgx return?
+
 // TEST: test this to verify it all works
 //	test containers!
 //	integration test svc? or integration test db.Queries and then unit test svc?
 //		or integration test both?
-// BUG: see BUG at bottom of Exec
+
+// TODO: add resilience
+// TODO: add caching of curr era to queries, and have rollover update cache
+
 // TODO: after this and other inlined TODOs, take a pass at the checklists
+
+var ErrWhitespaceEraName = errors.New("era name is whitespace")
 
 // Rollover is used to terminate the previous Era (if one exists) while creating
 // the next Era. While this Rollover occurs, other parts of the game will likely
@@ -45,17 +52,23 @@ type rolloverEraRepo interface {
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
 
+// Exec will return ErrWhitespaceEraName when newEraName is whitespace.
 func (r Rollover) Exec(
 	ctx context.Context,
 	now time.Time,
 	newEraName string,
 ) (newEra db.Era, updatedEra *db.Era, _ error) {
 	r.slogger.Info("Beginning the process of rolling over eras")
-	newEraName = strings.Trim(newEraName, " \r\n\t")
-	if len(newEraName) == 0 {
-		return db.Era{}, nil, fmt.Errorf("the new era's name is empty or whitespace")
-		// TODO: return sentinal err? return http status/msg? make sentinal err
-		// for 400 vs 500?
+
+	isWhitespace := true
+	for _, r := range newEraName {
+		if !unicode.IsSpace(r) {
+			isWhitespace = false
+			break
+		}
+	}
+	if isWhitespace {
+		return db.Era{}, nil, ErrWhitespaceEraName
 	}
 
 	r.slogger.Info("Attempting to retrieving current era, if exists")
@@ -102,12 +115,10 @@ func (r Rollover) Exec(
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
 	if err != nil {
-		// BUG: check if err is b/c of bad data (like dup name)
-		//	what to return such that 400s are obv?
 		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
 	}
-
 	r.slogger.Info("New era was saved")
+
 	r.slogger.Info("Completing the process of rolling over eras")
 	return newEra, updatedEra, nil
 }
