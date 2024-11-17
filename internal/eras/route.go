@@ -33,7 +33,7 @@ func Route(
 		allEras, err := eraQueries.GetEras(c)
 		if err != nil {
 			slogger.Error("An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
-			c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration"))
+			c.String(http.StatusInternalServerError, "An unexpected error was returned by the DB integration")
 		}
 
 		eraDTOs := make([]EraDTO, 0, len(allEras))
@@ -62,7 +62,7 @@ func Route(
 				return
 			}
 			slogger.Error("An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
-			c.String(http.StatusInternalServerError, fmt.Sprintf("An unexpected error was returned by the DB integration"))
+			c.String(http.StatusInternalServerError, "An unexpected error was returned by the DB integration")
 			return
 		}
 
