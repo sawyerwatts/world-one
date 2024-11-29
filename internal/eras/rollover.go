@@ -57,9 +57,9 @@ type rolloverDBQueries interface {
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
 
-// Exec uses sentinel errors ErrWhitespaceEraName or ErrDuplicateEraName. Exec
-// will not commit or rollback the transaction, the caller is responsible for
-// that.
+// Exec uses sentinel errors ErrWhitespaceEraName, ErrDuplicateEraName, and
+// common.ErrStaleDBInput. Exec will not commit or rollback the transaction, the
+// caller is responsible for that.
 func (r Rollover) Exec(
 	ctx context.Context,
 	now time.Time,
@@ -106,6 +106,10 @@ func (r Rollover) Exec(
 			return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 		}
 		if err != nil {
+			if err.Error() == common.PsqlErrorMessageNoRows {
+				r.slogger.Error("Failed to update the current era due to no rows returned; assuming a stale updated_time was used", slog.String("err", err.Error()))
+				return db.Era{}, nil, common.ErrStaleDBInput
+			}
 			return db.Era{}, nil, fmt.Errorf("era rollover failed while updating the current era: %w", err)
 		}
 		updatedEra = &updatedCurrEra
@@ -124,7 +128,7 @@ func (r Rollover) Exec(
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == common.PgErrorCodeUniqueViolation {
-			r.slogger.Error("given era name is a duplicate", slog.String("givenEraName", newEraName), slog.String("pgError", pgErr.Error()))
+			r.slogger.Error("given era name is a duplicate", slog.String("givenEraName", newEraName), slog.String("err", pgErr.Error()))
 			return db.Era{}, nil, ErrDuplicateEraName
 		}
 		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
