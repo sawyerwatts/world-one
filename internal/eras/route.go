@@ -109,6 +109,10 @@ func Route(
 				c.String(http.StatusBadRequest, "Expected query parameter newEraName but not given or was empty")
 				return
 			}
+			if errors.Is(err, ErrDuplicateEraName) {
+				c.String(http.StatusBadRequest, "The given new era's name is a duplicate of another pre-existing era")
+				return
+			}
 			slogger.Error("An unexpected error was returned when rolling over the era(s)", slog.String("err", err.Error()))
 			c.String(http.StatusInternalServerError, "An unexpected error was returned when rolling over the era(s)")
 			return

@@ -8,11 +8,11 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sawyerwatts/world-one/internal/common"
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// BUG: check if err is b/c of bad data (like dup name)
 // BUG: when updating w/ stale update_time, what err does pgx return?
 
 // TEST: test this to verify it all works
@@ -25,7 +25,10 @@ import (
 
 // TODO: after this and other inlined TODOs, take a pass at the checklists
 
-var ErrWhitespaceEraName = errors.New("era name is whitespace")
+var (
+	ErrWhitespaceEraName = errors.New("era name is whitespace")
+	ErrDuplicateEraName  = errors.New("era name is a duplicate")
+)
 
 // Rollover is used to terminate the previous Era (if one exists) while creating
 // the next Era. While this Rollover occurs, other parts of the game will likely
@@ -54,7 +57,9 @@ type rolloverDBQueries interface {
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
 
-// Exec will return ErrWhitespaceEraName when newEraName is whitespace.
+// Exec uses sentinel errors ErrWhitespaceEraName or ErrDuplicateEraName. Exec
+// will not commit or rollback the transaction, the caller is responsible for
+// that.
 func (r Rollover) Exec(
 	ctx context.Context,
 	now time.Time,
@@ -117,6 +122,11 @@ func (r Rollover) Exec(
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == common.PgErrorCodeUniqueViolation {
+			r.slogger.Error("given era name is a duplicate", slog.String("givenEraName", newEraName), slog.String("pgError", pgErr.Error()))
+			return db.Era{}, nil, ErrDuplicateEraName
+		}
 		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
 	}
 	r.slogger.Info("New era was saved")
