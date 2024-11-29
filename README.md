@@ -12,7 +12,7 @@ Check out the wiki!
 - `make stub-.env` will auto-generated a stubbed `.env` file. This file is in
 the `.gitignore` and is to contain credentials, secrets, etc. As such, run that
 recipe and initilize the variables.
-- If you need to run database migrations, `source ./env` will produce a
+- If you need to run database migrations, `source ./.env` will produce a
 `migrate` alias and a `W1_PGURL` environment variable.
 
 ## TODO

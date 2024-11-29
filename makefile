@@ -37,7 +37,7 @@ no-dirty:
 
 .PHONY: source-env
 source-env:
-	source ./env
+	@source ./.env || (echo 'Run `make stub-.env and fill out the environment variables'; exit 1)
 
 
 # ==================================================================================== #
@@ -126,10 +126,14 @@ tools/sqlc/generate: source-env
 stub-.env:
 	@echo -e "#!/bin/bash \n\
 	# This script contains credentials and secrets, so it is present in the .gitignore \n\
-	export W1_PGHOST=TODO:this \n\
-	export W1_PGUSER=TODO:this \n\
-	export W1_PGPASSWORD=TODO:this" > .env
-	@echo ".env has been stubbed, now go initialize the values"
+	export W1_PGURL="postgresql://YOUR_USER_NAME:YOUR_PASSWORD@localhost/world_one?sslmode=disable" \n\
+	alias migrate='go run -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest' \n\
+	# $ migrate create -ext sql -dir sql/migrations -seq create_users_table \n\
+	# $ source ./env.sh; migrate -path sql/migrations/ -database $W1_PGURL up \n\
+	# If you need to force a certain version: \n\
+	# 	$ migrate -path sql/migrations/ -database $W1_PGURL force 1 \n\
+	" > .env
+	@echo ".env has been stubbed, please go initialize the values"
 
 
 # ==================================================================================== #
