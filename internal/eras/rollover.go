@@ -13,8 +13,6 @@ import (
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// BUG: when updating w/ stale update_time, what err does pgx return?
-
 // TEST: test this to verify it all works
 //	test containers!
 //	integration test svc? or integration test db.Queries and then unit test svc?
