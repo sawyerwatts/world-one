@@ -14,6 +14,8 @@ import (
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
+// TODO: add perf endpoints (how would they be made not publicly available?)
+
 func main() {
 	// TODO: read settings via viper; use embed?
 	//	then update SlogIncludeSource to default to true

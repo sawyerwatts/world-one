@@ -60,6 +60,7 @@ func Route(
 		era, err := eraQueries.GetCurrEra(c)
 		if err != nil {
 			if errors.Is(err, ErrNoCurrEra) {
+				slogger.Error("There is no current era, the game is not initialized yet")
 				c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")
 				return
 			}

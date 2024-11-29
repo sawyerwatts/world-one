@@ -26,6 +26,7 @@ recipe and initilize the variables.
 ### Azure
 
 - Identity
+   - [Clerk?](https://clerk.com/?utm_source=fireship&utm_medium=youtube&utm_campaign=libsql)
    - Add to the following built endpoints:
       - N/A
 - Compute
@@ -33,11 +34,6 @@ recipe and initilize the variables.
 
 ### Application
 
-- Setup cmd
-   - ctl-c
-   - Gin
-   - Settings
-   - perf endpoints; lock down hard!
 - Eras
    - WIP: create/migrate era
    - update era
@@ -46,4 +42,15 @@ recipe and initilize the variables.
 - Players + Characters
     - Start ERD now that there's related tables
 - Etc
+
+## Installation
+
+### Database
+
+1. The application is written to assume that the database's local timezone
+   (which is used to auto-convert stored UTC datetimes into local timezone
+   appropriate values) is configured to UTC. To do this at a database, level,
+   use `# show config_file` to get the absolute path to `postgresql.conf`, and
+   then update all timezones to `'GMT'`.
+2. Apply the migrations.
 
