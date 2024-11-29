@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -20,6 +21,12 @@ func main() {
 	// TODO: read settings via viper; use embed?
 	//	then update SlogIncludeSource to default to true
 	mainSettings := makeMainSettings()
+
+	loc, err := time.LoadLocation(mainSettings.TimeZone)
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't set timezone to '%s'", mainSettings.TimeZone))
+	}
+	time.Local = loc
 
 	ctx := context.Background()
 
@@ -74,6 +81,7 @@ func main() {
 }
 
 type mainSettings struct {
+	TimeZone               string
 	Addr                   string
 	ReadTimeoutSec         int
 	WriteTimeoutSec        int
@@ -85,6 +93,7 @@ type mainSettings struct {
 
 func makeMainSettings() mainSettings {
 	return mainSettings{
+		TimeZone:               "GMT",
 		Addr:                   "localhost:8080",
 		ReadTimeoutSec:         30,
 		WriteTimeoutSec:        90,

@@ -85,7 +85,7 @@ tidy: source-.env
 ## run: build the application as debug and run the binary
 .PHONY: run
 run: source-.env build/debug
-	/tmp/bin/${binary_name}
+	$(go_env) /tmp/bin/${binary_name}
 
 ## run/live: run the application with reloading on file changes
 .PHONY: run/live
