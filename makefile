@@ -67,9 +67,8 @@ audit: source-.env test tools/sqlc/vet
 	$(go_env) go mod verify
 	test -z "$(shell gofmt -l .)"
 	$(go_env) go vet ./...
-	# WARN: You may decide to freeze these versions within a project
-	$(go_env) go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...
-	$(go_env) go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	$(go_env) go run honnef.co/go/tools/cmd/staticcheck@v0.5.1 -checks=all,-ST1000,-U1000 ./...
+	$(go_env) go run golang.org/x/vuln/cmd/govulncheck@v1.1.3 ./...
 
 
 # ==================================================================================== #
@@ -114,12 +113,12 @@ build/clean: source-.env
 ## tools/sqlc/vet: vet/lint the sqlc queries
 .PHONY: tools/sqlc/vet
 tools/sqlc/vet: source-.env
-	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest vet
+	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0 vet
 
 ## tools/sqlc/generate: generate code from sqlc queries
 .PHONY: tools/sqlc/generate
 tools/sqlc/generate: source-.env
-	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
+	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0 generate
 
 ## stub-.env: create a stubbed .env file
 .PHONY: stub-.env
@@ -127,7 +126,7 @@ stub-.env:
 	@echo -e "#!/bin/bash \n\
 	# This script contains credentials and secrets, so it is present in the .gitignore \n\
 	export W1_PGURL="postgresql://YOUR_USER_NAME:YOUR_PASSWORD@localhost/world_one?sslmode=disable" \n\
-	alias migrate='go run -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest' \n\
+	alias migrate='go run -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.1' \n\
 	# $ migrate create -ext sql -dir sql/migrations -seq create_users_table \n\
 	# $ source ./env.sh; migrate -path sql/migrations/ -database $W1_PGURL up \n\
 	# If you need to force a certain version: \n\
