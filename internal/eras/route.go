@@ -99,9 +99,8 @@ func Route(
 
 		dbQueries := db.New(tx)
 		eraQueries := MakeQueries(dbQueries, slogger)
-		rollover := MakeRollover(eraQueries, dbQueries, slogger)
 
-		newEra, prevEra, err := rollover.Exec(c, time.Now().UTC(), newEraName)
+		newEra, prevEra, err := Rollover(c, eraQueries, dbQueries, slogger, time.Now().UTC(), newEraName)
 		if err != nil {
 			if errors.Is(err, ErrWhitespaceEraName) {
 				c.String(http.StatusBadRequest, "Expected query parameter newEraName but not given or was empty")

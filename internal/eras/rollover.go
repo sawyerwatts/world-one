@@ -18,42 +18,24 @@ var (
 	ErrDuplicateEraName  = errors.New("era name is a duplicate")
 )
 
-// Rollover is used to terminate the previous Era (if one exists) while creating
-// the next Era. While this Rollover occurs, other parts of the game will likely
-// be soft reset as well; because of this, the Eras cannot be rolled over before
-// the actual start time of the new Era.
-type Rollover struct {
-	eraQueries Queries
-	dbQueries  rolloverDBQueries
-	slogger    *slog.Logger
-}
-
-func MakeRollover(
-	eraQueries Queries,
-	dbQueries rolloverDBQueries,
-	slogger *slog.Logger,
-) Rollover {
-	return Rollover{
-		eraQueries: eraQueries,
-		dbQueries:  dbQueries,
-		slogger:    slogger,
-	}
-}
-
 type rolloverDBQueries interface {
 	InsertEra(ctx context.Context, arg db.InsertEraParams) (db.Era, error)
 	UpdateEra(ctx context.Context, arg db.UpdateEraParams) (db.Era, error)
 }
 
-// Exec uses sentinel errors ErrWhitespaceEraName, ErrDuplicateEraName, and
-// common.ErrStaleDBInput. Exec will not commit or rollback the transaction, the
-// caller is responsible for that.
-func (r Rollover) Exec(
+// Rollover is used to terminate the previous Era (if one exists) while creating
+// the next Era. While this Rollover occurs, other parts of the game will likely
+// be soft reset as well; because of this, the Eras cannot be rolled over before
+// the actual start time of the new Era.
+func Rollover(
 	ctx context.Context,
+	eraQueries Queries,
+	dbQueries rolloverDBQueries,
+	slogger *slog.Logger,
 	now time.Time,
 	newEraName string,
 ) (newEra db.Era, updatedEra *db.Era, _ error) {
-	r.slogger.Info("Beginning the process of rolling over eras")
+	slogger.Info("Beginning the process of rolling over eras")
 
 	isWhitespace := true
 	for _, r := range newEraName {
@@ -66,8 +48,8 @@ func (r Rollover) Exec(
 		return db.Era{}, nil, ErrWhitespaceEraName
 	}
 
-	r.slogger.Info("Attempting to retrieving current era, if exists")
-	currEra, err := r.eraQueries.GetCurrEra(ctx)
+	slogger.Info("Attempting to retrieving current era, if exists")
+	currEra, err := eraQueries.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
 	}
@@ -81,9 +63,9 @@ func (r Rollover) Exec(
 	}
 
 	if hasCurrEra {
-		r.slogger.Info("There is a current era, terminating and updating database")
+		slogger.Info("There is a current era, terminating and updating database")
 		currEra.EndTime = now
-		updatedCurrEra, err := r.dbQueries.UpdateEra(ctx, db.UpdateEraParams{
+		updatedCurrEra, err := dbQueries.UpdateEra(ctx, db.UpdateEraParams{
 			ID:         currEra.ID,
 			Name:       currEra.Name,
 			StartTime:  currEra.StartTime,
@@ -95,17 +77,17 @@ func (r Rollover) Exec(
 		}
 		if err != nil {
 			if err.Error() == common.PsqlErrorMessageNoRows {
-				r.slogger.Error("Failed to update the current era due to no rows returned; assuming a stale updated_time was used", slog.String("err", err.Error()))
+				slogger.Error("Failed to update the current era due to no rows returned; assuming a stale updated_time was used", slog.String("err", err.Error()))
 				return db.Era{}, nil, common.ErrStaleDBInput
 			}
 			return db.Era{}, nil, fmt.Errorf("era rollover failed while updating the current era: %w", err)
 		}
 		updatedEra = &updatedCurrEra
-		r.slogger.Info("Current era was saved")
+		slogger.Info("Current era was saved")
 	}
 
-	r.slogger.Info("Inserting new era")
-	newEra, err = r.dbQueries.InsertEra(ctx, db.InsertEraParams{
+	slogger.Info("Inserting new era")
+	newEra, err = dbQueries.InsertEra(ctx, db.InsertEraParams{
 		Name:      newEraName,
 		StartTime: now,
 		EndTime:   common.UninitializedEndDate,
@@ -116,13 +98,13 @@ func (r Rollover) Exec(
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == common.PgErrorCodeUniqueViolation {
-			r.slogger.Error("given era name is a duplicate", slog.String("givenEraName", newEraName), slog.String("err", pgErr.Error()))
+			slogger.Error("given era name is a duplicate", slog.String("givenEraName", newEraName), slog.String("err", pgErr.Error()))
 			return db.Era{}, nil, ErrDuplicateEraName
 		}
 		return db.Era{}, nil, fmt.Errorf("era rollover failed while inserting the new era: %w", err)
 	}
-	r.slogger.Info("New era was saved")
+	slogger.Info("New era was saved")
 
-	r.slogger.Info("Completing the process of rolling over eras")
+	slogger.Info("Completing the process of rolling over eras")
 	return newEra, updatedEra, nil
 }
