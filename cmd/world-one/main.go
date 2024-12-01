@@ -13,13 +13,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sawyerwatts/world-one/internal/eras"
+	_ "net/http/pprof" // BUG: how add auth to these endpoints?
 )
 
-// TODO: add perf endpoints (how would they be made not publicly available?)
-
 func main() {
-	// TODO: read settings via viper; use embed?
-	//	then update SlogIncludeSource to default to true
 	mainSettings := makeMainSettings()
 
 	loc, err := time.LoadLocation(mainSettings.TimeZone)
@@ -34,13 +31,7 @@ func main() {
 	slog.SetDefault(slogger)
 
 	router := gin.Default()
-	// TODO: configure Gin to use slogger
-	// TODO: improve req logging
 
-	// TODO: api stuffs
-	//	Start openapi spec, and have an endpoint for that too
-	//	Also include example http file
-	//	Healthchecks (connect to DB; ensure curr era exists)
 	v1 := router.Group("/v1")
 	eras.Route(v1, mainSettings.DBConnectionString, slogger)
 
@@ -70,7 +61,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 	slogger.Info("Received term or interrupt signal, will shutdown gracefully within a number of seconds", slog.Int("timeLimitSec", mainSettings.MaxGracefulShutdownSec))
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(mainSettings.MaxGracefulShutdownSec))
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(mainSettings.MaxGracefulShutdownSec)*time.Second)
 	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {
 		slogger.ErrorContext(ctx, "Server errored while shutting down", slog.String("err", err.Error()))

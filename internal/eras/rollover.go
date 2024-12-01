@@ -13,16 +13,6 @@ import (
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// TEST: test this to verify it all works
-//	test containers!
-//	integration test svc? or integration test db.Queries and then unit test svc?
-//		or integration test both?
-
-// TODO: add resilience
-// TODO: add caching of curr era to queries, and have rollover update cache
-
-// TODO: after this and other inlined TODOs, take a pass at the checklists
-
 var (
 	ErrWhitespaceEraName = errors.New("era name is whitespace")
 	ErrDuplicateEraName  = errors.New("era name is a duplicate")
