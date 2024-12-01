@@ -11,8 +11,6 @@ import (
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
-// TODO: what would this look like if it was a ctlr?
-//	have methods for each endpoint to route instead of anonymous funcs?
 // TODO: but what if need slogger from middleware? get from ctx?
 
 func Route(
