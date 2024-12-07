@@ -35,9 +35,6 @@ recipe and initilize the variables.
 ### Application
 
 - Eras
-   - WIP: create/migrate era
-   - update era
-   - Get curr era w/ cache
 - Factions
 - Players + Characters
     - Start ERD now that there's related tables

@@ -8,19 +8,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/sawyerwatts/world-one/internal/common/middleware"
 	"github.com/sawyerwatts/world-one/internal/db"
 )
-
-// TODO: but what if need slogger from middleware? get from ctx?
 
 func Route(
 	v1 *gin.RouterGroup,
 	dbConnString string,
-	slogger *slog.Logger,
 ) {
 	group := v1.Group("/eras")
 
 	group.GET("", func(c *gin.Context) {
+		slogger := middleware.GetSloggerOrPanic(c)
 		dbConn, err := pgx.Connect(c, dbConnString)
 		if err != nil {
 			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
@@ -46,6 +45,7 @@ func Route(
 	})
 
 	group.GET("/current", func(c *gin.Context) {
+		slogger := middleware.GetSloggerOrPanic(c)
 		dbConn, err := pgx.Connect(c, dbConnString)
 		if err != nil {
 			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
@@ -71,6 +71,7 @@ func Route(
 	})
 
 	group.POST("/rollover", func(c *gin.Context) {
+		slogger := middleware.GetSloggerOrPanic(c)
 		newEraName := c.Query("newEraName")
 		if len(newEraName) == 0 {
 			c.String(http.StatusBadRequest, "Expected query parameter newEraName but not given or was empty")

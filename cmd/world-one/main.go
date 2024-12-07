@@ -11,9 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/sawyerwatts/world-one/internal/eras"
 	_ "net/http/pprof" // BUG: how add auth to these endpoints?
+
+	"github.com/gin-gonic/gin"
+	"github.com/sawyerwatts/world-one/internal/common/middleware"
+	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
 func main() {
@@ -31,9 +33,12 @@ func main() {
 	slog.SetDefault(slogger)
 
 	router := gin.Default()
+	// TODO: update gin router to use slogger, esp w/ traceUUID
+
+	router.Use(middleware.UseTraceUUIDAndSlogger(slogger))
 
 	v1 := router.Group("/v1")
-	eras.Route(v1, mainSettings.DBConnectionString, slogger)
+	eras.Route(v1, mainSettings.DBConnectionString)
 
 	s := http.Server{
 		Addr:           mainSettings.Addr,

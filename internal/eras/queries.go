@@ -10,6 +10,8 @@ import (
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
+// TODO: impl caching
+
 var ErrNoCurrEra = errors.New("there is no current era, the game is misconfigured")
 
 type Queries struct {
