@@ -18,6 +18,12 @@ import (
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
+// TODO: curr opr-level checklist task: adding assertions
+// TODO: curr app-level checklist task: finalizing logging
+//	use gin.New() instead of gin.Default()
+//		update gin router to use slogger, esp w/ traceUUID
+//		write own panic protection
+
 func main() {
 	mainSettings := makeMainSettings()
 
@@ -33,7 +39,6 @@ func main() {
 	slog.SetDefault(slogger)
 
 	router := gin.Default()
-	// TODO: update gin router to use slogger, esp w/ traceUUID
 
 	router.Use(middleware.UseTraceUUIDAndSlogger(slogger))
 

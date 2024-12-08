@@ -3,7 +3,7 @@ begin;
 create extension if not exists moddatetime;
 
 create table if not exists eras(
-		id bigserial primary key,
+		id bigint generated always as identity primary key,
 		name text not null unique,
 		start_time timestamptz not null,
 		end_time timestamptz not null,
