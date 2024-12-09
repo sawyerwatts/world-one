@@ -14,6 +14,7 @@ import (
 	_ "net/http/pprof" // BUG: how add auth to these endpoints?
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sawyerwatts/world-one/internal/common/middleware"
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
@@ -38,12 +39,19 @@ func main() {
 	slogger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: mainSettings.SlogIncludeSource}))
 	slog.SetDefault(slogger)
 
+	dbPool, err := pgxpool.New(context.Background(), mainSettings.DBConnectionString)
+	if err != nil {
+		panic(err)
+	}
+	defer dbPool.Close()
+
 	router := gin.Default()
 
 	router.Use(middleware.UseTraceUUIDAndSlogger(slogger))
 
 	v1 := router.Group("/v1")
-	eras.Route(v1, mainSettings.DBConnectionString)
+
+	eras.Route(v1, dbPool)
 
 	s := http.Server{
 		Addr:           mainSettings.Addr,

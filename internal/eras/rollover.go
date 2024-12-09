@@ -48,7 +48,6 @@ func Rollover(
 		return db.Era{}, nil, ErrWhitespaceEraName
 	}
 
-	slogger.Info("Attempting to retrieving current era, if exists")
 	currEra, err := eraQueries.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
 		return db.Era{}, nil, fmt.Errorf("short circuiting era rollover, context has error: %w", err)
@@ -83,7 +82,7 @@ func Rollover(
 			return db.Era{}, nil, fmt.Errorf("era rollover failed while updating the current era: %w", err)
 		}
 		updatedEra = &updatedCurrEra
-		slogger.Info("Current era was saved")
+		slogger.Info("Current era was terminated")
 	}
 
 	slogger.Info("Inserting new era")

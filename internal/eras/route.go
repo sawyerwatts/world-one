@@ -8,26 +8,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sawyerwatts/world-one/internal/common/middleware"
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
 func Route(
 	v1 *gin.RouterGroup,
-	dbConnString string,
+	dbPool *pgxpool.Pool,
 ) {
 	group := v1.Group("/eras")
 
 	group.GET("", func(c *gin.Context) {
 		slogger := middleware.GetSloggerOrPanic(c)
-		dbConn, err := pgx.Connect(c, dbConnString)
-		if err != nil {
-			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
-			c.String(http.StatusInternalServerError, "Could not connect to DB")
-		}
-		defer dbConn.Close(c)
-
-		dbQueries := db.New(dbConn)
+		dbQueries := db.New(dbPool)
 		eraQueries := MakeQueries(dbQueries, slogger)
 		allEras, err := eraQueries.GetEras(c)
 		if err != nil {
@@ -35,10 +29,9 @@ func Route(
 			c.String(http.StatusInternalServerError, "An unexpected error was returned by the DB integration")
 		}
 
-		eraDTOs := make([]EraDTO, 0, len(allEras))
-		for _, era := range allEras {
-			eraDTO := MakeEraDTO(era)
-			eraDTOs = append(eraDTOs, eraDTO)
+		eraDTOs := make([]EraDTO, len(allEras))
+		for i, era := range allEras {
+			eraDTOs[i] = MakeEraDTO(era)
 		}
 
 		c.JSON(http.StatusOK, eraDTOs)
@@ -46,14 +39,7 @@ func Route(
 
 	group.GET("/current", func(c *gin.Context) {
 		slogger := middleware.GetSloggerOrPanic(c)
-		dbConn, err := pgx.Connect(c, dbConnString)
-		if err != nil {
-			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
-			c.String(http.StatusInternalServerError, "Could not connect to DB")
-		}
-		defer dbConn.Close(c)
-
-		dbQueries := db.New(dbConn)
+		dbQueries := db.New(dbPool)
 		eraQueries := MakeQueries(dbQueries, slogger)
 		era, err := eraQueries.GetCurrEra(c)
 		if err != nil {
@@ -78,14 +64,7 @@ func Route(
 			return
 		}
 
-		dbConn, err := pgx.Connect(c, dbConnString)
-		if err != nil {
-			slogger.Error("Could not connect to DB", slog.String("err", err.Error()))
-			c.String(http.StatusInternalServerError, "Could not connect to DB")
-		}
-		defer dbConn.Close(c)
-
-		tx, err := dbConn.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.Serializable})
+		tx, err := dbPool.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.Serializable})
 		if err != nil {
 			slogger.Error("Could not begin serializable transaciton", slog.String("err", err.Error()))
 		}
