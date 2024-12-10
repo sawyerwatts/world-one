@@ -23,7 +23,7 @@ type mainConfig struct {
 }
 
 func readConfig() *mainConfig {
-	var mainSettings *mainConfig
+	var mainConfig *mainConfig
 
 	v := viper.New()
 	v.SetEnvPrefix("W1")
@@ -38,15 +38,15 @@ func readConfig() *mainConfig {
 		panic("viper failed to read configs: " + err.Error())
 	}
 
-	mainSettings = newMainConfig()
-	if err := v.Unmarshal(mainSettings); err != nil {
+	mainConfig = newMainConfig()
+	if err := v.Unmarshal(mainConfig); err != nil {
 		panic("viper failed to unmarshal configs: " + err.Error())
 	}
-	if err := mainSettings.Validate(); err != nil {
-		panic("settings failed to validate: " + err.Error())
+	if err := mainConfig.Validate(); err != nil {
+		panic("config failed to validate: " + err.Error())
 	}
 
-	return mainSettings
+	return mainConfig
 }
 
 func newMainConfig() *mainConfig {
@@ -64,25 +64,25 @@ func newMainConfig() *mainConfig {
 
 func (c *mainConfig) Validate() error {
 	if c.TimeZone == "" {
-		return errors.New("setting TimeZone is not initialized")
+		return errors.New("config TimeZone is not initialized")
 	}
 	if c.Addr == "" {
-		return errors.New("setting Addr is not initialized")
+		return errors.New("config Addr is not initialized")
 	}
 	if c.ReadTimeoutSec < 1 {
-		return errors.New("setting ReadTimeoutSec is not positive")
+		return errors.New("config ReadTimeoutSec is not positive")
 	}
 	if c.WriteTimeoutSec < 1 {
-		return errors.New("setting WriteTimeoutSec is not positive")
+		return errors.New("config WriteTimeoutSec is not positive")
 	}
 	if c.IdleTimeoutSec < 1 {
-		return errors.New("setting IdleTimeoutSec is not positive")
+		return errors.New("config IdleTimeoutSec is not positive")
 	}
 	if c.MaxGracefulShutdownSec < 1 {
-		return errors.New("setting MaxGracefulShutdownSec is not positive")
+		return errors.New("config MaxGracefulShutdownSec is not positive")
 	}
 	if c.DBConnectionString == "" {
-		return errors.New("setting DBConnectionString is not initialized")
+		return errors.New("config DBConnectionString is not initialized")
 	}
 	return nil
 }
