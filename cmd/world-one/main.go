@@ -19,8 +19,9 @@ import (
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
-// TODO: curr opr-level checklist task: adding assertions
-// TODO: curr app-level checklist task: common.md
+// TODO: curr opr-level checklist task: README.md/assertions
+// TODO: curr app-level checklist task: webApis.md/healthcheck
+// TODO: review security.md after auth is implemented
 
 func main() {
 	ctx := context.Background()

@@ -57,8 +57,11 @@ recipe and initilize the variables.
    - `W1_PGURL`: the URL of DB.
    - `GIN_MODE=release`: instruct Gin to operate in release mode.
 
-### Misc
+### Azure Responsibilities
 
-- The app only writes to stdout, not a file. The invoking component is
-responsible for redirecting those logs to a permanent location.
+Some responsibilities are delegated to the hypothetical Azure deployment.
+
+- Azure Monitor
+   - Redirect logs from STDOUT to a persistent location
+   - Alert when a 500 occurs
 
