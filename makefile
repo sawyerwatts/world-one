@@ -3,7 +3,7 @@
 
 main_package_path = ./cmd/world-one
 binary_name = world-one
-go_env = GOOS=linux GOARCH=amd64 source ./.env &&
+go_env = source ./.env && GOOS=linux GOARCH=amd64
 
 # NOTE: Don't forget about build tags, like `-tags integration`!
 
