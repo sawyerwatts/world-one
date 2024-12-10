@@ -53,15 +53,6 @@ func main() {
 		//		update gin router to use slogger, esp w/ traceUUID
 		//		write own panic protection
 
-		// TODO: is there a way to mount the whole website w/o conflicting w/ the api?
-		router.StaticFile("/favicon.ico", path.Join(mainConfig.WebsiteDir, "favicon.ico"))
-		router.StaticFile("/v1-openapi3.1.yml", path.Join(mainConfig.WebsiteDir, "v1-openapi3.1.yml"))
-		router.LoadHTMLGlob(path.Join(mainConfig.WebsiteDir, "*.html"))
-		// TODO: OpenAPI spec + webpage
-		//	make OpenAPI spec + endpoint
-		//	update scalar to use W1 spec
-		//	consider breaking up spec and using references more
-
 		api := router.Group("/api")
 		api.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
 
@@ -71,6 +62,17 @@ func main() {
 		})
 
 		eras.Route(v1, dbPool)
+
+		// BUG: Get an actual FS mount to / working alongside apis
+		// router.Static("/", mainConfig.WebsiteDir)
+		// router.StaticFS("/", http.Dir(mainConfig.WebsiteDir))
+		router.StaticFile("/favicon.ico", path.Join(mainConfig.WebsiteDir, "favicon.ico"))
+		router.StaticFile("/v1-openapi3.1.yml", path.Join(mainConfig.WebsiteDir, "v1-openapi3.1.yml"))
+		router.LoadHTMLGlob(path.Join(mainConfig.WebsiteDir, "*.html"))
+		// TODO: OpenAPI spec + webpage
+		//	make OpenAPI spec + endpoint
+		//	update scalar to use W1 spec
+		//	consider breaking up spec and using references more
 	}
 
 	s := http.Server{
