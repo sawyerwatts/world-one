@@ -8,7 +8,7 @@ import (
 
 const sloggerContextKey = "slogger"
 
-func GetSloggerOrPanic(c *gin.Context) *slog.Logger {
+func MustGetSlogger(c *gin.Context) *slog.Logger {
 	sloggerAny, ok := c.Get(sloggerContextKey)
 	if ok {
 		return sloggerAny.(*slog.Logger)

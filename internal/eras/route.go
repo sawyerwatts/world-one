@@ -20,7 +20,7 @@ func Route(
 	group := v1.Group("/eras")
 
 	group.GET("", func(c *gin.Context) {
-		slogger := middleware.GetSloggerOrPanic(c)
+		slogger := middleware.MustGetSlogger(c)
 		dbQueries := db.New(dbPool)
 		eraQueries := MakeQueries(dbQueries, slogger)
 		allEras, err := eraQueries.GetEras(c)
@@ -38,7 +38,7 @@ func Route(
 	})
 
 	group.GET("/current", func(c *gin.Context) {
-		slogger := middleware.GetSloggerOrPanic(c)
+		slogger := middleware.MustGetSlogger(c)
 		dbQueries := db.New(dbPool)
 		eraQueries := MakeQueries(dbQueries, slogger)
 		era, err := eraQueries.GetCurrEra(c)
@@ -57,7 +57,7 @@ func Route(
 	})
 
 	group.POST("/rollover", func(c *gin.Context) {
-		slogger := middleware.GetSloggerOrPanic(c)
+		slogger := middleware.MustGetSlogger(c)
 		newEraName := c.Query("newEraName")
 		if len(newEraName) == 0 {
 			c.String(http.StatusBadRequest, "Expected query parameter newEraName but not given or was empty")

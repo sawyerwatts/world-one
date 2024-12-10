@@ -20,7 +20,6 @@ import (
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
-// TODO: rename GetSloggerOrPanic to MustGetSlogger
 // TODO: curr opr-level checklist task: README.md/assertions
 // TODO: curr app-level checklist task: webApis.md/healthcheck
 // TODO: review security.md after auth is implemented
@@ -54,7 +53,9 @@ func main() {
 		//		update gin router to use slogger, esp w/ traceUUID
 		//		write own panic protection
 
+		// TODO: is there a way to mount the whole website w/o conflicting w/ the api?
 		router.StaticFile("/favicon.ico", path.Join(mainConfig.WebsiteDir, "favicon.ico"))
+		router.StaticFile("/v1-openapi3.1.yml", path.Join(mainConfig.WebsiteDir, "v1-openapi3.1.yml"))
 		router.LoadHTMLGlob(path.Join(mainConfig.WebsiteDir, "*.html"))
 		// TODO: OpenAPI spec + webpage
 		//	make OpenAPI spec + endpoint
