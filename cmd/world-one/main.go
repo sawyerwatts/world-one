@@ -20,8 +20,8 @@ import (
 )
 
 // TODO: curr opr-level checklist task: adding assertions
-// TODO: curr app-level checklist task: finalizing logging
-//	use gin.New() instead of gin.Default()
+// TODO: curr app-level checklist task: configs
+//	use gin.New() instead of gin.Default()?
 //		update gin router to use slogger, esp w/ traceUUID
 //		write own panic protection
 
@@ -36,7 +36,8 @@ func main() {
 
 	ctx := context.Background()
 
-	slogger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: mainSettings.SlogIncludeSource}))
+	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: mainSettings.SlogIncludeSource})
+	slogger := slog.New(slogHandler)
 	slog.SetDefault(slogger)
 
 	dbPool, err := pgxpool.New(context.Background(), mainSettings.DBConnectionString)
@@ -47,7 +48,7 @@ func main() {
 
 	router := gin.Default()
 
-	router.Use(middleware.UseTraceUUIDAndSlogger(slogger))
+	router.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
 
 	v1 := router.Group("/v1")
 
@@ -60,6 +61,7 @@ func main() {
 		WriteTimeout:   time.Duration(mainSettings.WriteTimeoutSec) * time.Second,
 		IdleTimeout:    time.Duration(mainSettings.IdleTimeoutSec) * time.Second,
 		MaxHeaderBytes: 1 << 20,
+		ErrorLog:       slog.NewLogLogger(slogHandler, slog.LevelError),
 	}
 
 	slogger.InfoContext(ctx, "Starting HTTP server", slog.String("addr", mainSettings.Addr))
@@ -78,7 +80,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
-	slogger.Info("Received term or interrupt signal, will shutdown gracefully within a number of seconds", slog.Int("timeLimitSec", mainSettings.MaxGracefulShutdownSec))
+	slogger.InfoContext(ctx, "Received term or interrupt signal, will shutdown gracefully within a number of seconds", slog.Int("timeLimitSec", mainSettings.MaxGracefulShutdownSec))
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(mainSettings.MaxGracefulShutdownSec)*time.Second)
 	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {

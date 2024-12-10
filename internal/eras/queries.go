@@ -35,7 +35,7 @@ type queriesDBQueries interface {
 }
 
 func (q Queries) GetCurrEra(ctx context.Context) (db.Era, error) {
-	q.slogger.Info("Retrieving current era")
+	q.slogger.InfoContext(ctx, "Retrieving current era")
 	currEra, err := q.dbQueries.GetCurrEra(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -43,16 +43,16 @@ func (q Queries) GetCurrEra(ctx context.Context) (db.Era, error) {
 		}
 		return db.Era{}, fmt.Errorf("era queries failed to retrieve current era: %w", err)
 	}
-	q.slogger.Info("Retrieved current era")
+	q.slogger.InfoContext(ctx, "Retrieved current era")
 	return currEra, nil
 }
 
 func (q Queries) GetEras(ctx context.Context) ([]db.Era, error) {
-	q.slogger.Info("Retrieving eras")
+	q.slogger.InfoContext(ctx, "Retrieving eras")
 	allEras, err := q.dbQueries.GetEras(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("era queries failed to retrieve all eras: %w", err)
 	}
-	q.slogger.Info("Retrieved eras")
+	q.slogger.InfoContext(ctx, "Retrieved eras")
 	return allEras, nil
 }

@@ -51,3 +51,8 @@ recipe and initilize the variables.
    then update all timezones to `'GMT'`.
 2. Apply the migrations.
 
+### Misc
+
+- The app only writes to stdout, not a file. The invoking component is
+responsible for redirecting those logs to a permanent location.
+

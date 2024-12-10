@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -18,7 +19,7 @@ const TraceUUIDHeader = "X-TRACE-UUID"
 //
 // This is intended to be a very early middleware, so much so that it does not
 // check if there is a slogger in the context.
-func UseTraceUUIDAndSlogger(slogger *slog.Logger) func(c *gin.Context) {
+func UseTraceUUIDAndSlogger(ctx context.Context, slogger *slog.Logger) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var traceUUID uuid.UUID
 		var err error
@@ -35,7 +36,7 @@ func UseTraceUUIDAndSlogger(slogger *slog.Logger) func(c *gin.Context) {
 		}
 
 		sloggerWithTraceUUID := slogger.With(slog.String("traceUUID", traceUUID.String()))
-		sloggerWithTraceUUID.Info("Trace UUID has been added to this request's slogger and the context")
+		sloggerWithTraceUUID.InfoContext(ctx, "Trace UUID has been added to this request's slogger and the context")
 		c.Header(TraceUUIDHeader, traceUUID.String())
 		c.Set(TraceUUIDContextKey, traceUUID)
 		c.Set(sloggerContextKey, sloggerWithTraceUUID)

@@ -25,7 +25,7 @@ func Route(
 		eraQueries := MakeQueries(dbQueries, slogger)
 		allEras, err := eraQueries.GetEras(c)
 		if err != nil {
-			slogger.Error("An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
+			slogger.ErrorContext(c, "An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
 			c.String(http.StatusInternalServerError, "An unexpected error was returned by the DB integration")
 		}
 
@@ -44,11 +44,11 @@ func Route(
 		era, err := eraQueries.GetCurrEra(c)
 		if err != nil {
 			if errors.Is(err, ErrNoCurrEra) {
-				slogger.Error("There is no current era, the game is not initialized yet")
+				slogger.ErrorContext(c, "There is no current era, the game is not initialized yet")
 				c.String(http.StatusInternalServerError, "There is no current era, the game is not initialized yet")
 				return
 			}
-			slogger.Error("An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
+			slogger.ErrorContext(c, "An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
 			c.String(http.StatusInternalServerError, "An unexpected error was returned by the DB integration")
 			return
 		}
@@ -66,12 +66,12 @@ func Route(
 
 		tx, err := dbPool.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.Serializable})
 		if err != nil {
-			slogger.Error("Could not begin serializable transaciton", slog.String("err", err.Error()))
+			slogger.ErrorContext(c, "Could not begin serializable transaciton", slog.String("err", err.Error()))
 		}
 		defer func() {
 			err := tx.Rollback(c)
 			if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-				slogger.Error("Transaction rollback failed unexpectedly", slog.String("err", err.Error()))
+				slogger.ErrorContext(c, "Transaction rollback failed unexpectedly", slog.String("err", err.Error()))
 				c.String(http.StatusInternalServerError, "Transaction rollback failed unexpectedly")
 				return
 			}
@@ -90,14 +90,14 @@ func Route(
 				c.String(http.StatusBadRequest, "The given new era's name is a duplicate of another pre-existing era")
 				return
 			}
-			slogger.Error("An unexpected error was returned when rolling over the era(s)", slog.String("err", err.Error()))
+			slogger.ErrorContext(c, "An unexpected error was returned when rolling over the era(s)", slog.String("err", err.Error()))
 			c.String(http.StatusInternalServerError, "An unexpected error was returned when rolling over the era(s)")
 			return
 		}
 
 		err = tx.Commit(c)
 		if err != nil {
-			slogger.Error("An unexpected error was returned when committing the changes", slog.String("err", err.Error()))
+			slogger.ErrorContext(c, "An unexpected error was returned when committing the changes", slog.String("err", err.Error()))
 			c.String(http.StatusInternalServerError, "An unexpected error was returned when committing the changes")
 			return
 		}
