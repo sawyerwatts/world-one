@@ -1,13 +1,14 @@
 package eras
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sawyerwatts/world-one/internal/db"
 )
 
 type EraDTO struct {
-	ID         int64     `json:"id"`
+	ID         string    `json:"id"`
 	Name       string    `json:"name"`
 	StartTime  time.Time `json:"startTime"`
 	EndTime    time.Time `json:"endTime"`
@@ -17,7 +18,7 @@ type EraDTO struct {
 
 func MakeEraDTO(era db.Era) EraDTO {
 	return EraDTO{
-		ID:         era.ID,
+		ID:         fmt.Sprintf("%d", era.ID),
 		Name:       era.Name,
 		StartTime:  era.StartTime,
 		EndTime:    era.EndTime,
