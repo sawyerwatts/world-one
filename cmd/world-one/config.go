@@ -20,6 +20,7 @@ type mainConfig struct {
 	MaxGracefulShutdownSec int
 	SlogIncludeSource      bool
 	DBConnectionString     string `mapstructure:"PGURL"`
+	WebsiteDir             string
 }
 
 func readConfig() *mainConfig {
@@ -83,6 +84,9 @@ func (c *mainConfig) Validate() error {
 	}
 	if c.DBConnectionString == "" {
 		return errors.New("config DBConnectionString is not initialized")
+	}
+	if c.WebsiteDir == "" {
+		return errors.New("config WebsiteDir is not initialized")
 	}
 	return nil
 }

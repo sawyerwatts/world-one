@@ -141,5 +141,6 @@ push: confirm audit no-dirty
 production/deploy: confirm audit no-dirty
 	$(go_env) go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
 	upx -5 /tmp/bin/linux_amd64/${binary_name}
+	# TODO: need to tar website/ and deploy too
 	# TODO: Include additional deployment steps here...
 

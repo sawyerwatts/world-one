@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -52,9 +53,18 @@ func main() {
 		//		update gin router to use slogger, esp w/ traceUUID
 		//		write own panic protection
 
-		router.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
+		router.LoadHTMLGlob(path.Join(mainConfig.WebsiteDir, "*.html"))
+		// TODO: OpenAPI spec + Scalar webpage
+		//	make OpenAPI spec + endpoint
+		//	update Scalar webpage to use OpenAPI spec
 
-		v1 := router.Group("/v1")
+		api := router.Group("/api")
+		api.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
+
+		v1 := api.Group("/v1")
+		v1.GET("", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "scalar-v1.html", gin.H{})
+		})
 
 		eras.Route(v1, dbPool)
 	}
