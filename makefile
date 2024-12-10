@@ -1,10 +1,6 @@
 # Kudos to Alex for the original version:
 # https://www.alexedwards.net/blog/a-time-saving-makefile-for-your-go-projects
 
-SHELL := /bin/bash
-
-.DEFAULT_GOAL = run
-
 main_package_path = ./cmd/world-one
 binary_name = world-one
 go_env = GOOS=linux GOARCH=amd64 source ./.env &&

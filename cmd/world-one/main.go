@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -21,21 +23,29 @@ import (
 )
 
 // TODO: curr opr-level checklist task: adding assertions
-// TODO: curr app-level checklist task: configs
+// TODO: curr app-level checklist task: common.md
+
+//go:embed config.json
+var embeddedConfig embed.FS
 
 func main() {
 	ctx := context.Background()
 
 	var mainSettings *mainSettings
 	{
-		// TODO: use the embed API
 		v := viper.New()
 		v.SetEnvPrefix("W1")
 		v.BindEnv("PGURL")
-		v.SetConfigFile("./cmd/world-one/config.json")
-		if err := v.ReadInConfig(); err != nil {
+
+		configBytes, err := embeddedConfig.ReadFile("config.json")
+		if err != nil {
+			panic("embedded config filesystem failed to retrieve file: " + err.Error())
+		}
+		v.SetConfigType("json")
+		if err := v.ReadConfig(bytes.NewReader(configBytes)); err != nil {
 			panic("viper failed to read configs: " + err.Error())
 		}
+
 		mainSettings = newMainSettings()
 		if err := v.Unmarshal(mainSettings); err != nil {
 			panic("viper failed to unmarshal configs: " + err.Error())
