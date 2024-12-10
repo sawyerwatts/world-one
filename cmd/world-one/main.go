@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,55 +17,29 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sawyerwatts/world-one/internal/common/middleware"
 	"github.com/sawyerwatts/world-one/internal/eras"
-	"github.com/spf13/viper"
 )
 
 // TODO: curr opr-level checklist task: adding assertions
 // TODO: curr app-level checklist task: common.md
 
-//go:embed config.json
-var embeddedConfig embed.FS
-
 func main() {
 	ctx := context.Background()
 
-	var mainSettings *mainSettings
-	{
-		v := viper.New()
-		v.SetEnvPrefix("W1")
-		v.BindEnv("PGURL")
-
-		configBytes, err := embeddedConfig.ReadFile("config.json")
-		if err != nil {
-			panic("embedded config filesystem failed to retrieve file: " + err.Error())
-		}
-		v.SetConfigType("json")
-		if err := v.ReadConfig(bytes.NewReader(configBytes)); err != nil {
-			panic("viper failed to read configs: " + err.Error())
-		}
-
-		mainSettings = newMainSettings()
-		if err := v.Unmarshal(mainSettings); err != nil {
-			panic("viper failed to unmarshal configs: " + err.Error())
-		}
-		if err := mainSettings.Validate(); err != nil {
-			panic("settings failed to validate: " + err.Error())
-		}
-	}
+	mainConfig := readConfig()
 
 	{
-		loc, err := time.LoadLocation(mainSettings.TimeZone)
+		loc, err := time.LoadLocation(mainConfig.TimeZone)
 		if err != nil {
-			panic(fmt.Sprintf("Couldn't set timezone to '%s'", mainSettings.TimeZone))
+			panic(fmt.Sprintf("Couldn't set timezone to '%s'", mainConfig.TimeZone))
 		}
 		time.Local = loc
 	}
 
-	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: mainSettings.SlogIncludeSource})
+	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: mainConfig.SlogIncludeSource})
 	slogger := slog.New(slogHandler)
 	slog.SetDefault(slogger)
 
-	dbPool, err := pgxpool.New(context.Background(), mainSettings.DBConnectionString)
+	dbPool, err := pgxpool.New(context.Background(), mainConfig.DBConnectionString)
 	if err != nil {
 		panic(err)
 	}
@@ -87,16 +59,16 @@ func main() {
 	}
 
 	s := http.Server{
-		Addr:           mainSettings.Addr,
+		Addr:           mainConfig.Addr,
 		Handler:        router,
-		ReadTimeout:    time.Duration(mainSettings.ReadTimeoutSec) * time.Second,
-		WriteTimeout:   time.Duration(mainSettings.WriteTimeoutSec) * time.Second,
-		IdleTimeout:    time.Duration(mainSettings.IdleTimeoutSec) * time.Second,
+		ReadTimeout:    time.Duration(mainConfig.ReadTimeoutSec) * time.Second,
+		WriteTimeout:   time.Duration(mainConfig.WriteTimeoutSec) * time.Second,
+		IdleTimeout:    time.Duration(mainConfig.IdleTimeoutSec) * time.Second,
 		MaxHeaderBytes: 1 << 20,
 		ErrorLog:       slog.NewLogLogger(slogHandler, slog.LevelError),
 	}
 
-	slogger.InfoContext(ctx, "Starting HTTP server", slog.String("addr", mainSettings.Addr))
+	slogger.InfoContext(ctx, "Starting HTTP server", slog.String("addr", mainConfig.Addr))
 	exitCode := 0
 	go func() {
 		err := s.ListenAndServe()
@@ -112,8 +84,8 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
-	slogger.InfoContext(ctx, "Received term or interrupt signal, will shutdown gracefully within a number of seconds", slog.Int("timeLimitSec", mainSettings.MaxGracefulShutdownSec))
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(mainSettings.MaxGracefulShutdownSec)*time.Second)
+	slogger.InfoContext(ctx, "Received term or interrupt signal, will shutdown gracefully within a number of seconds", slog.Int("timeLimitSec", mainConfig.MaxGracefulShutdownSec))
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(mainConfig.MaxGracefulShutdownSec)*time.Second)
 	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {
 		slogger.ErrorContext(ctx, "Server errored while shutting down", slog.String("err", err.Error()))
@@ -121,53 +93,4 @@ func main() {
 	}
 
 	os.Exit(exitCode)
-}
-
-type mainSettings struct {
-	TimeZone               string
-	Addr                   string
-	ReadTimeoutSec         int
-	WriteTimeoutSec        int
-	IdleTimeoutSec         int
-	MaxGracefulShutdownSec int
-	SlogIncludeSource      bool
-	DBConnectionString     string `mapstructure:"PGURL"`
-}
-
-func newMainSettings() *mainSettings {
-	return &mainSettings{
-		TimeZone:               "GMT",
-		Addr:                   "",
-		ReadTimeoutSec:         30,
-		WriteTimeoutSec:        90,
-		IdleTimeoutSec:         120,
-		MaxGracefulShutdownSec: 5,
-		SlogIncludeSource:      false,
-		DBConnectionString:     "",
-	}
-}
-
-func (s *mainSettings) Validate() error {
-	if s.TimeZone == "" {
-		return errors.New("setting TimeZone is not initialized")
-	}
-	if s.Addr == "" {
-		return errors.New("setting Addr is not initialized")
-	}
-	if s.ReadTimeoutSec < 1 {
-		return errors.New("setting ReadTimeoutSec is not positive")
-	}
-	if s.WriteTimeoutSec < 1 {
-		return errors.New("setting WriteTimeoutSec is not positive")
-	}
-	if s.IdleTimeoutSec < 1 {
-		return errors.New("setting IdleTimeoutSec is not positive")
-	}
-	if s.MaxGracefulShutdownSec < 1 {
-		return errors.New("setting MaxGracefulShutdownSec is not positive")
-	}
-	if s.DBConnectionString == "" {
-		return errors.New("setting DBConnectionString is not initialized")
-	}
-	return nil
 }
