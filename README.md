@@ -51,6 +51,12 @@ recipe and initilize the variables.
    then update all timezones to `'GMT'`.
 2. Apply the migrations.
 
+### Web API
+
+- The following environment variables should be set when deployed:
+   - `W1_PGURL`: the URL of DB.
+   - `GIN_MODE=release`: instruct Gin to operate in release mode.
+
 ### Misc
 
 - The app only writes to stdout, not a file. The invoking component is

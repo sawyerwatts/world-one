@@ -17,24 +17,41 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sawyerwatts/world-one/internal/common/middleware"
 	"github.com/sawyerwatts/world-one/internal/eras"
+	"github.com/spf13/viper"
 )
 
 // TODO: curr opr-level checklist task: adding assertions
 // TODO: curr app-level checklist task: configs
-//	use gin.New() instead of gin.Default()?
-//		update gin router to use slogger, esp w/ traceUUID
-//		write own panic protection
 
 func main() {
-	mainSettings := makeMainSettings()
-
-	loc, err := time.LoadLocation(mainSettings.TimeZone)
-	if err != nil {
-		panic(fmt.Sprintf("Couldn't set timezone to '%s'", mainSettings.TimeZone))
-	}
-	time.Local = loc
-
 	ctx := context.Background()
+
+	var mainSettings *mainSettings
+	{
+		// TODO: use the embed API
+		v := viper.New()
+		v.SetEnvPrefix("W1")
+		v.BindEnv("PGURL")
+		v.SetConfigFile("./cmd/world-one/config.json")
+		if err := v.ReadInConfig(); err != nil {
+			panic("viper failed to read configs: " + err.Error())
+		}
+		mainSettings = newMainSettings()
+		if err := v.Unmarshal(mainSettings); err != nil {
+			panic("viper failed to unmarshal configs: " + err.Error())
+		}
+		if err := mainSettings.Validate(); err != nil {
+			panic("settings failed to validate: " + err.Error())
+		}
+	}
+
+	{
+		loc, err := time.LoadLocation(mainSettings.TimeZone)
+		if err != nil {
+			panic(fmt.Sprintf("Couldn't set timezone to '%s'", mainSettings.TimeZone))
+		}
+		time.Local = loc
+	}
 
 	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: mainSettings.SlogIncludeSource})
 	slogger := slog.New(slogHandler)
@@ -47,12 +64,17 @@ func main() {
 	defer dbPool.Close()
 
 	router := gin.Default()
+	{
+		// TODO: use gin.New() instead of gin.Default()?
+		//		update gin router to use slogger, esp w/ traceUUID
+		//		write own panic protection
 
-	router.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
+		router.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
 
-	v1 := router.Group("/v1")
+		v1 := router.Group("/v1")
 
-	eras.Route(v1, dbPool)
+		eras.Route(v1, dbPool)
+	}
 
 	s := http.Server{
 		Addr:           mainSettings.Addr,
@@ -89,28 +111,4 @@ func main() {
 	}
 
 	os.Exit(exitCode)
-}
-
-type mainSettings struct {
-	TimeZone               string
-	Addr                   string
-	ReadTimeoutSec         int
-	WriteTimeoutSec        int
-	IdleTimeoutSec         int
-	MaxGracefulShutdownSec int
-	SlogIncludeSource      bool
-	DBConnectionString     string
-}
-
-func makeMainSettings() mainSettings {
-	return mainSettings{
-		TimeZone:               "GMT",
-		Addr:                   "localhost:8080",
-		ReadTimeoutSec:         30,
-		WriteTimeoutSec:        90,
-		IdleTimeoutSec:         120,
-		MaxGracefulShutdownSec: 5,
-		SlogIncludeSource:      false,
-		DBConnectionString:     "dbname=world_one",
-	}
 }
