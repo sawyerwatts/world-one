@@ -24,6 +24,8 @@ import (
 // TODO: curr app-level checklist task: webApis.md/healthcheck
 // TODO: review security.md after auth is implemented
 
+// TODO: rm Viper, don't need it
+
 func main() {
 	ctx := context.Background()
 
