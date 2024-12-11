@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -66,9 +66,9 @@ func main() {
 		// BUG: Get an actual FS mount to / working alongside apis
 		// router.Static("/", mainConfig.WebsiteDir)
 		// router.StaticFS("/", http.Dir(mainConfig.WebsiteDir))
-		router.StaticFile("/favicon.ico", path.Join(mainConfig.WebsiteDir, "favicon.ico"))
-		router.StaticFile("/v1-openapi3.1.yml", path.Join(mainConfig.WebsiteDir, "v1-openapi3.1.yml"))
-		router.LoadHTMLGlob(path.Join(mainConfig.WebsiteDir, "*.html"))
+		router.StaticFile("/favicon.ico", filepath.Join(mainConfig.WebsiteDir, "favicon.ico"))
+		router.StaticFile("/v1-openapi3.1.yml", filepath.Join(mainConfig.WebsiteDir, "v1-openapi3.1.yml"))
+		router.LoadHTMLGlob(filepath.Join(mainConfig.WebsiteDir, "*.html"))
 		// TODO: OpenAPI spec + webpage
 		//	make OpenAPI spec + endpoint
 		//	update scalar to use W1 spec
