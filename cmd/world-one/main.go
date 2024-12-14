@@ -59,7 +59,27 @@ func main() {
 
 		v1 := router.Group("/v1")
 		v1.GET("", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "scalar-v1.html", gin.H{})
+			// TODO: how want to handle the Scalar webpages
+			//	per of dynamic: dynamically generate data-url based off version
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			c.String(http.StatusOK, `<!doctype html>
+<html>
+  <head>
+    <title>Scalar API Reference</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <!-- Need a Custom Header? Check out this example https://codepen.io/scalarorg/pen/VwOXqam -->
+    <script
+      id="api-reference"
+      data-url="/v1-openapi3.1.yml"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>`)
+			//c.HTML(http.StatusOK, "scalar-v1.html", gin.H{})
 		})
 
 		eras.Route(v1, dbPool)
@@ -77,11 +97,16 @@ func main() {
 	}
 
 	s := http.Server{
-		Addr:           mainConfig.Addr,
-		Handler:        router,
-		ReadTimeout:    time.Duration(mainConfig.ReadTimeoutSec) * time.Second,
-		WriteTimeout:   time.Duration(mainConfig.WriteTimeoutSec) * time.Second,
-		IdleTimeout:    time.Duration(mainConfig.IdleTimeoutSec) * time.Second,
+		Addr: mainConfig.Addr,
+		Handler: http.TimeoutHandler(
+			router,
+			time.Duration(mainConfig.RequestTimeoutMS)*time.Millisecond,
+			fmt.Sprintf("The request timed out as it ran longer than %d milliseconds", mainConfig.RequestTimeoutMS)),
+		ReadHeaderTimeout: time.Duration(mainConfig.ReadHeaderTimeoutMS) * time.Millisecond,
+		ReadTimeout:       time.Duration(mainConfig.ReadTimeoutMS) * time.Millisecond,
+		// WriteTimeout isn't configured since it closes the conn without
+		// sending a response code and doesn't propogate the context.
+		IdleTimeout:    time.Duration(mainConfig.IdleTimeoutMS) * time.Millisecond,
 		MaxHeaderBytes: 1 << 20,
 		ErrorLog:       slog.NewLogLogger(slogHandler, slog.LevelError),
 	}

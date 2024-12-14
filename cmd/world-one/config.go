@@ -14,9 +14,10 @@ var embeddedConfig embed.FS
 type mainConfig struct {
 	TimeZone               string
 	Addr                   string
-	ReadTimeoutSec         int
-	WriteTimeoutSec        int
-	IdleTimeoutSec         int
+	ReadHeaderTimeoutMS    int
+	ReadTimeoutMS          int
+	IdleTimeoutMS          int
+	RequestTimeoutMS       int
 	MaxGracefulShutdownSec int
 	SlogIncludeSource      bool
 	DBConnectionString     string `mapstructure:"PGURL"`
@@ -54,9 +55,10 @@ func newMainConfig() *mainConfig {
 	return &mainConfig{
 		TimeZone:               "GMT",
 		Addr:                   "",
-		ReadTimeoutSec:         30,
-		WriteTimeoutSec:        90,
-		IdleTimeoutSec:         120,
+		ReadHeaderTimeoutMS:    500,
+		ReadTimeoutMS:          500,
+		IdleTimeoutMS:          30_000,
+		RequestTimeoutMS:       10_000,
 		MaxGracefulShutdownSec: 5,
 		SlogIncludeSource:      false,
 		DBConnectionString:     "",
@@ -70,14 +72,17 @@ func (c *mainConfig) Validate() error {
 	if c.Addr == "" {
 		return errors.New("config Addr is not initialized")
 	}
-	if c.ReadTimeoutSec < 1 {
-		return errors.New("config ReadTimeoutSec is not positive")
+	if c.ReadHeaderTimeoutMS < 1 {
+		return errors.New("config ReadHeaderTimeoutMS is not positive")
 	}
-	if c.WriteTimeoutSec < 1 {
-		return errors.New("config WriteTimeoutSec is not positive")
+	if c.ReadTimeoutMS < 1 {
+		return errors.New("config ReadTimeoutMS is not positive")
 	}
-	if c.IdleTimeoutSec < 1 {
-		return errors.New("config IdleTimeoutSec is not positive")
+	if c.IdleTimeoutMS < 1 {
+		return errors.New("config IdleTimeoutMS is not positive")
+	}
+	if c.RequestTimeoutMS < 1 {
+		return errors.New("config RequestTimeoutMS is not positive")
 	}
 	if c.MaxGracefulShutdownSec < 1 {
 		return errors.New("config MaxGracefulShutdownSec is not positive")
