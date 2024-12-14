@@ -27,6 +27,7 @@ func Route(
 		if err != nil {
 			slogger.ErrorContext(c, "An unexpected error was returned by the DB integration", slog.String("err", err.Error()))
 			c.String(http.StatusInternalServerError, "An unexpected error was returned by the DB integration")
+			return
 		}
 
 		eraDTOs := make([]EraDTO, len(allEras))
@@ -67,6 +68,8 @@ func Route(
 		tx, err := dbPool.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.Serializable})
 		if err != nil {
 			slogger.ErrorContext(c, "Could not begin serializable transaciton", slog.String("err", err.Error()))
+			c.String(http.StatusInternalServerError, "Could not begin serializable transaciton")
+			return
 		}
 		defer func() {
 			err := tx.Rollback(c)
