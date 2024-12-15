@@ -1,0 +1,6 @@
+{
+	"Addr": "localhost:8080",
+	"WebsiteDir": "./website",
+	"SlogIncludeSource": false
+}
+
