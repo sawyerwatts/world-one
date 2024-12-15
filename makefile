@@ -3,9 +3,8 @@
 
 main_package_path = ./cmd/world-one
 binary_name = world-one
-go_env = source ./.env && GOOS=linux GOARCH=amd64
 
-# NOTE: Don't forget about build tags, like `-tags integration`!
+# NOTE: Don't forget about build tags (which can be negated).
 
 # WARN: It can be helpful to set GOPROXY=direct when running `audit` as that
 # will use the cached versions.
@@ -39,28 +38,28 @@ no-dirty:
 ## test: run all tests
 .PHONY: test
 test:
-	$(go_env) go test -v -race -buildvcs ./...
+	go test -v -race -buildvcs ./...
 
 ## test/force: forcefully run all tests
 .PHONY: test/force
 test/force:
-	$(go_env) go test -v -race -buildvcs -count=1 ./...
+	go test -v -race -buildvcs -count=1 ./...
 
 ## test/cover: run all tests and display coverage
 .PHONY: test/cover
 test/cover:
-	$(go_env) go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
-	$(go_env) go tool cover -html=/tmp/coverage.out
+	go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
+	go tool cover -html=/tmp/coverage.out
 
 ## audit: run quality control checks
 .PHONY: audit
 audit: test tools/sqlc/vet
-	$(go_env) go mod tidy -diff
-	$(go_env) go mod verify
+	go mod tidy -diff
+	go mod verify
 	test -z "$(shell gofmt -l .)"
-	$(go_env) go vet ./...
-	$(go_env) go run honnef.co/go/tools/cmd/staticcheck@v0.5.1 -checks=all,-ST1000,-U1000 ./...
-	$(go_env) go run golang.org/x/vuln/cmd/govulncheck@v1.1.3 ./...
+	go vet ./...
+	go run honnef.co/go/tools/cmd/staticcheck@v0.5.1 -checks=all,-ST1000,-U1000 ./...
+	go run golang.org/x/vuln/cmd/govulncheck@v1.1.3 ./...
 
 
 # ==================================================================================== #
@@ -70,32 +69,23 @@ audit: test tools/sqlc/vet
 ## tidy: tidy modfiles and format .go files
 .PHONY: tidy
 tidy:
-	$(go_env) go mod tidy -v
-	$(go_env) go fmt ./...
+	go mod tidy -v
+	go fmt ./...
 
 ## run: build the application as debug and run the binary
 .PHONY: run
 run: build/debug
-	$(go_env) /tmp/bin/${binary_name}
+	source ./.env && /tmp/bin/${binary_name}
 
-## run/live: run the application with reloading on file changes
-.PHONY: run/live
-run/live: build/debug
-	$(go_env) go run github.com/cosmtrek/air@v1.43.0 \
-		--build.cmd "make build" --build.bin "/tmp/bin/${binary_name}" --build.delay "100" \
-		--build.exclude_dir "" \
-		--build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" \
-		--misc.clean_on_exit "true"
+## build/local: build the application with -race, -v, etc
+.PHONY: build/local
+build/local:
+	go build -v -race -o=/tmp/bin/${binary_name} ${main_package_path}
 
-## build: build the application without -race, -v, etc
-.PHONY: build
-build:
-	$(go_env) go build -o=/tmp/bin/${binary_name} ${main_package_path}
-
-## build/race: build the application with -race, -v, etc
-.PHONY: build/debug
-build/debug:
-	$(go_env) go build -v -race -o=/tmp/bin/${binary_name} ${main_package_path}
+## build/release: build the application without -race, -v, etc, for a specific OS and architecture
+.PHONY: build/release
+build/release:
+	GOOS=linux GOARCH=amd64 go build -o=/tmp/bin/${binary_name} ${main_package_path}
 
 ## build/clean: remove build artifacts
 .PHONY: build/clean
@@ -110,7 +100,7 @@ tools/sqlc/vet:
 ## tools/sqlc/generate: generate code from sqlc queries
 .PHONY: tools/sqlc/generate
 tools/sqlc/generate:
-	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0 generate
+	source ./.env && go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0 generate
 
 ## stub-.env: create a stubbed .env file
 .PHONY: stub-.env
@@ -138,9 +128,8 @@ push: confirm audit no-dirty
 
 ## production/deploy: deploy the application to production
 .PHONY: production/deploy
-production/deploy: confirm audit no-dirty
-	$(go_env) go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
-	upx -5 /tmp/bin/linux_amd64/${binary_name}
+production/deploy: confirm audit no-dirty build/release
+	upx -5 /tmp/bin/${binary_name}
 	# TODO: need to tar website/ and deploy too
 	# TODO: replace the host in web api specs w/ real value
 	# TODO: Include additional deployment steps here...
