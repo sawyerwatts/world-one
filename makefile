@@ -38,17 +38,14 @@ no-dirty:
 ## test: run all tests
 .PHONY: test
 test:
-	go test -v -race -buildvcs ./...
+	go test -v -race -shuffle=on -parallel=8 -buildvcs ./...
 
-## test/force: forcefully run all tests
-.PHONY: test/force
-test/force:
-	go test -v -race -buildvcs -count=1 ./...
+# TODO: nail down testing strategy and consider more testing recipes
 
 ## test/cover: run all tests and display coverage
 .PHONY: test/cover
 test/cover:
-	go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
+	go test -v -race -shuffle=on -parallel=8 -buildvcs -coverprofile=/tmp/coverage.out ./...
 	go tool cover -html=/tmp/coverage.out
 
 ## audit: run quality control checks
