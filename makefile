@@ -9,12 +9,12 @@ binary_name = world-one
 # WARN: It can be helpful to set GOPROXY=direct when running `audit` as that
 # will use the cached versions.
 
+# NOTE: Starting a line with @ (no subsequent space) will disable printing the
+# line that is being executed.
+
 # ==================================================================================== #
 # HELPERS
 # ==================================================================================== #
-
-# NOTE: Starting a line with @ (no subsequent space) will disable printing the
-# line that is being executed.
 
 ## help: print this help message
 .PHONY: help
@@ -66,13 +66,29 @@ audit: test tools/sqlc/vet
 # DEVELOPMENT
 # ==================================================================================== #
 
+## stub-.env: create a stubbed .env file
+.PHONY: stub-.env
+stub-.env:
+	@echo -e "#!/bin/bash \n\
+	set -u \n\
+	# This script contains credentials and secrets, so it is present in the .gitignore \n\
+	export W1_PGURL="postgresql://YOUR_USER_NAME:YOUR_PASSWORD@localhost/world_one?sslmode=disable" \n\
+	alias migrate='go run -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.1' \n\
+	# $ migrate create -ext sql -dir sql/migrations -seq create_users_table \n\
+	# $ source ./env.sh; migrate -path sql/migrations/ -database $W1_PGURL up \n\
+	# If you need to force a certain version: \n\
+	# 	$ migrate -path sql/migrations/ -database $W1_PGURL force 1 \n\
+	" > .env
+	@echo ".env has been stubbed, please go initialize the values"
+
+
 ## tidy: tidy modfiles and format .go files
 .PHONY: tidy
 tidy:
 	go mod tidy -v
 	go fmt ./...
 
-## run: build the application as debug and run the binary
+## run: build/local and run the binary using .env
 .PHONY: run
 run: build/debug
 	source ./.env && /tmp/bin/${binary_name}
@@ -101,20 +117,6 @@ tools/sqlc/vet:
 .PHONY: tools/sqlc/generate
 tools/sqlc/generate:
 	source ./.env && go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0 generate
-
-## stub-.env: create a stubbed .env file
-.PHONY: stub-.env
-stub-.env:
-	@echo -e "#!/bin/bash \n\
-	# This script contains credentials and secrets, so it is present in the .gitignore \n\
-	export W1_PGURL="postgresql://YOUR_USER_NAME:YOUR_PASSWORD@localhost/world_one?sslmode=disable" \n\
-	alias migrate='go run -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.1' \n\
-	# $ migrate create -ext sql -dir sql/migrations -seq create_users_table \n\
-	# $ source ./env.sh; migrate -path sql/migrations/ -database $W1_PGURL up \n\
-	# If you need to force a certain version: \n\
-	# 	$ migrate -path sql/migrations/ -database $W1_PGURL force 1 \n\
-	" > .env
-	@echo ".env has been stubbed, please go initialize the values"
 
 
 # ==================================================================================== #
