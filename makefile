@@ -45,7 +45,7 @@ test:
 ## test/cover: run all tests and display coverage
 .PHONY: test/cover
 test/cover:
-	go test -v -race -shuffle=on -parallel=8 -buildvcs -coverprofile=/tmp/coverage.out ./...
+	go test -v -race -shuffle=on -parallel=8 -buildvcs -coverpkg=./... -coverprofile=/tmp/coverage.out ./...
 	go tool cover -html=/tmp/coverage.out
 
 ## audit: run quality control checks
