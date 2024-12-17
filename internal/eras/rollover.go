@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 	"unicode"
 
@@ -47,6 +48,7 @@ func Rollover(
 	if isWhitespace {
 		return db.Era{}, nil, ErrWhitespaceEraName
 	}
+	newEraName = strings.TrimSpace(newEraName)
 
 	currEra, err := eraQueries.GetCurrEra(ctx)
 	if err := ctx.Err(); err != nil {
