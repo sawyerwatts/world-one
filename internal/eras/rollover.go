@@ -28,6 +28,8 @@ type rolloverDBQueries interface {
 // the next Era. While this Rollover occurs, other parts of the game will likely
 // be soft reset as well; because of this, the Eras cannot be rolled over before
 // the actual start time of the new Era.
+//
+// If newEraName has leading or trailing whitespace, that will be removed.
 func Rollover(
 	ctx context.Context,
 	eraQueries Queries,
