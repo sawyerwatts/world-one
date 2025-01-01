@@ -114,23 +114,23 @@ components:
         name:
           type: string
           examples:
-            - "The first Era"
+            - The first Era
         startTime:
           type: string
           examples:
-            - "2024-12-09T02:48:40.246181Z"
+            - 2024-12-09T02:48:40.246181Z
         endTime:
           type: string
           examples:
-            - "2024-12-09T02:48:40.246181Z"
+            - 2200-01-01T00:00:00Z
         createTime:
           type: string
           examples:
-            - "2024-12-09T02:48:40.246181Z"
+            - 2024-12-09T02:48:40.246181Z
         updateTime:
           type: string
           examples:
-            - "2024-12-09T02:48:40.246181Z"
+            - 2024-12-09T02:48:40.246181Z
     Error:
       type: object
       description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
