@@ -81,16 +81,11 @@ func main() {
 		})
 
 		eras.Route(v1, dbPool)
-
-		// BUG: Get an actual FS mount to / working alongside apis
-		// router.Static("/", mainConfig.WebsiteDir)
-		// router.StaticFS("/", http.Dir(mainConfig.WebsiteDir))
 		router.StaticFile("/favicon.ico", filepath.Join(mainConfig.WebsiteDir, "favicon.ico"))
-		router.StaticFile("/v1-openapi3.1.yml", filepath.Join(mainConfig.WebsiteDir, "v1-openapi3.1.yml"))
+		router.StaticFile("/open-api-v1.yml", filepath.Join(mainConfig.WebsiteDir, "open-api-v1.yml"))
 		router.LoadHTMLGlob(filepath.Join(mainConfig.WebsiteDir, "*.html"))
 		// TODO: OpenAPI spec + webpage
 		//	make OpenAPI spec + endpoint
-		//	mv spec to better location/name
 		//	consider breaking up spec and using references more
 	}
 
