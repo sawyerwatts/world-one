@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"embed"
+	"encoding/json"
 	"errors"
-
-	"github.com/spf13/viper"
+	"os"
+	"strings"
 )
 
 //go:embed config.json
@@ -24,28 +24,24 @@ type mainConfig struct {
 	WebsiteDir             string
 }
 
-func readConfig() *mainConfig {
-	var mainConfig *mainConfig
-
-	v := viper.New()
-	v.SetEnvPrefix("W1")
-	v.BindEnv("PGURL")
+func mustReadConfig() *mainConfig {
+	mainConfig := newMainConfig()
 
 	configBytes, err := embeddedConfig.ReadFile("config.json")
 	if err != nil {
 		panic("embedded config filesystem failed to retrieve file: " + err.Error())
 	}
-	v.SetConfigType("json")
-	if err := v.ReadConfig(bytes.NewReader(configBytes)); err != nil {
-		panic("viper failed to read configs: " + err.Error())
-	}
+	json.Unmarshal(configBytes, mainConfig)
 
-	mainConfig = newMainConfig()
-	if err := v.Unmarshal(mainConfig); err != nil {
-		panic("viper failed to unmarshal configs: " + err.Error())
-	}
-	if err := mainConfig.Validate(); err != nil {
-		panic("config failed to validate: " + err.Error())
+	const pgurlEnv = "W1_PGURL"
+	if pgurl, ok := os.LookupEnv(pgurlEnv); !ok {
+		panic("there is not an environment variable " + pgurlEnv)
+	} else {
+		pgurl = strings.TrimSpace(pgurl)
+		if pgurl == "" {
+			panic("environment variable " + pgurlEnv + " is whitespace or empty")
+		}
+		mainConfig.DBConnectionString = pgurl
 	}
 
 	return mainConfig

@@ -87,7 +87,7 @@ tidy:
 
 ## run: build/local and run the binary using .env
 .PHONY: run
-run: build/debug
+run: build/local
 	source ./.env && /tmp/bin/${binary_name}
 
 ## build/local: build the application with -race, -v, etc
