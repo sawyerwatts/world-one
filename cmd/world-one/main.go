@@ -68,8 +68,8 @@ func main() {
 		router.StaticFile("/open-api-v1.yml", filepath.Join(mainConfig.WebsiteDir, "open-api-v1.yml"))
 		router.LoadHTMLGlob(filepath.Join(mainConfig.WebsiteDir, "*.html"))
 		// TODO: OpenAPI spec + webpage
-		//	make OpenAPI spec + endpoint
 		//	consider breaking up spec and using references more
+		//	explore swaggo or go-swagger, writing the openapi spec by hand is v unfun
 	}
 
 	s := http.Server{
