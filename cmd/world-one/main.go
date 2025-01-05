@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sawyerwatts/world-one/internal/common"
 	"github.com/sawyerwatts/world-one/internal/common/middleware"
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
@@ -57,6 +58,23 @@ func main() {
 		//		write own panic protection
 
 		router.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
+
+		// TODO: curr era check
+		router.GET("/healthChecks", common.NewHealthChecksEndpoint([]common.HealthCheck{
+			{
+				Name: "DB Connectivity",
+				Check: func(c *gin.Context, _ *slog.Logger) common.HealthCheckResult {
+					_, err := dbPool.Exec(c, "select now()")
+					if err != nil {
+						return common.HealthCheckResult{
+							Status:  common.HealthStatusUnhealthy,
+							Payload: map[string]any{"err": err.Error()},
+						}
+					}
+					return common.HealthCheckResult{Status: common.HealthStatusHealthy}
+				},
+			},
+		}))
 
 		v1 := router.Group("/v1")
 		v1.GET("", func(c *gin.Context) {

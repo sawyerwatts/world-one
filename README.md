@@ -66,4 +66,6 @@ Some responsibilities are delegated to the hypothetical Azure deployment.
 - Azure Monitor
    - Redirect logs from STDOUT to a persistent location
    - Alert when a 500 occurs
+- Principle
+   - Don't use basic auth in DB connection string! Health checks may leak it
 

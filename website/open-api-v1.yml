@@ -15,6 +15,9 @@ tags:
   - name: Eras
     description:
       Eras control configs and allow for soft-resets of the game state.
+  - name: Operations
+    description:
+      These endpoints are for IT operations.
 paths:
   '/v1/eras':
     get:
@@ -95,6 +98,52 @@ paths:
                 type: string
                 examples:
                   - Bad request, try again
+  '/healthChecks':
+    get:
+      tags:
+        - Operations
+      summary: Get health checks
+      operationId: healthChecks
+      security:
+        - {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - HealthCheckOverview:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [Healthy, Degraded, Unhealthy]
+                      duration:
+                        type: string
+                        examples:
+                          - "14.916111ms"
+                          - "202.212µs"
+                      checks:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              examples:
+                                - "DB Connectivity"
+                            status:
+                              type: string
+                              enum: [Healthy, Degraded, Unhealthy]
+                            duration:
+                              type: string
+                              examples:
+                                - "14.916111ms"
+                                - "202.212µs"
+                            payloadDict:
+                              type: object
+                              additionalProperties: true
 components:
   schemas:
     EraDTO:
