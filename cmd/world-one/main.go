@@ -21,6 +21,8 @@ import (
 	"github.com/sawyerwatts/world-one/internal/eras"
 )
 
+// BUG: remember how to get pprof working (then put under the admin tag on oapi?)
+
 // TODO: impl paging on eras
 //	not because it's actually relevant there, but as an exercise
 
