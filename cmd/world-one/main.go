@@ -30,7 +30,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	mainConfig := mustReadConfig()
+	mainConfig := mustGetConfig()
 
 	{
 		loc, err := time.LoadLocation(mainConfig.TimeZone)

@@ -24,7 +24,7 @@ type mainConfig struct {
 	WebsiteDir             string
 }
 
-func mustReadConfig() *mainConfig {
+func mustGetConfig() *mainConfig {
 	mainConfig := newMainConfig()
 
 	configBytes, err := embeddedConfig.ReadFile("config.json")
