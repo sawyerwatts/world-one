@@ -24,8 +24,8 @@ import (
 // TODO: impl paging on eras
 //	not because it's actually relevant there, but as an exercise
 
-// TODO: curr opr-level checklist task: README.md/assertions
-// TODO: curr app-level checklist task: webApis.md/healthcheck
+// TODO: curr opr-level checklist task: README.md/assertions (just restart)
+// TODO: curr app-level checklist task: webApis.md/etags (just restart)
 // TODO: review security.md after auth is implemented
 
 func main() {
