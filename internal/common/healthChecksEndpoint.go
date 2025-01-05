@@ -16,7 +16,7 @@ type HealthStatus string
 const HealthStatusHealthy HealthStatus = "Healthy"
 
 // HealthStatusDegraded indicates that the app or health check are experiencing
-// issues but may be degraded (as opposed to unhealthy/inoperable).
+// issues or latencies but may be degraded (as opposed to unhealthy/inoperable).
 const HealthStatusDegraded HealthStatus = "Degraded"
 
 // HealthStatusUnhealthy indicates that the app or health check cannot run in any

@@ -59,10 +59,10 @@ func main() {
 
 		router.Use(middleware.UseTraceUUIDAndSlogger(ctx, slogger))
 
-		// TODO: curr era check
-		router.GET("/healthChecks", common.NewHealthChecksEndpoint([]common.HealthCheck{
-			{
-				Name: "DB Connectivity",
+		{
+			checks := make([]common.HealthCheck, 0, 2)
+			checks = append(checks, common.HealthCheck{
+				Name: "Test DB Connectivity",
 				Check: func(c *gin.Context, _ *slog.Logger) common.HealthCheckResult {
 					_, err := dbPool.Exec(c, "select now()")
 					if err != nil {
@@ -73,13 +73,13 @@ func main() {
 					}
 					return common.HealthCheckResult{Status: common.HealthStatusHealthy}
 				},
-			},
-		}))
+			})
+			checks = eras.AppendHealthChecks(checks, dbPool)
+			router.GET("/healthChecks", common.NewHealthChecksEndpoint(checks))
+		}
 
 		v1 := router.Group("/v1")
 		v1.GET("", func(c *gin.Context) {
-			// TODO: how want to handle the Scalar webpages
-			//	per of dynamic: dynamically generate data-url based off version
 			c.Header("Content-Type", "text/html; charset=utf-8")
 			c.HTML(http.StatusOK, "scalar-v1.html", gin.H{})
 		})
@@ -88,9 +88,6 @@ func main() {
 		router.StaticFile("/favicon.ico", filepath.Join(mainConfig.WebsiteDir, "favicon.ico"))
 		router.StaticFile("/open-api-v1.yml", filepath.Join(mainConfig.WebsiteDir, "open-api-v1.yml"))
 		router.LoadHTMLGlob(filepath.Join(mainConfig.WebsiteDir, "*.html"))
-		// TODO: OpenAPI spec + webpage
-		//	consider breaking up spec and using references more
-		//	explore swaggo or go-swagger, writing the openapi spec by hand is v unfun
 	}
 
 	s := http.Server{

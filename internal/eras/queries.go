@@ -34,6 +34,7 @@ type queriesDBQueries interface {
 	GetEras(ctx context.Context) ([]db.Era, error)
 }
 
+// GettCurrEra can return ErrNoCurrEra.
 func (q Queries) GetCurrEra(ctx context.Context) (db.Era, error) {
 	q.slogger.InfoContext(ctx, "Retrieving current era")
 	currEra, err := q.dbQueries.GetCurrEra(ctx)
